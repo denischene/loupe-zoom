@@ -23,6 +23,40 @@
   pointer-events: none;
 }
 
+/* Crosshair */
+#loupe-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  z-index: 1;
+}
+#loupe-crosshair::before,
+#loupe-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 0, 0, 0.7);
+}
+#loupe-crosshair::before {
+  /* Horizontal line */
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+#loupe-crosshair::after {
+  /* Vertical line */
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
 body.loupe-active {
   cursor: none !important;
 }
