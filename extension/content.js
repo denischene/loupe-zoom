@@ -8,16 +8,17 @@
   let captureImg = null;
   let captureTime = 0;
 
-  const ZOOM = 5;
+  let zoom = 5;
   const SIZE = 180;
-  const CAPTURE_INTERVAL = 100; // ms between recaptures
+  const CAPTURE_INTERVAL = 100;
+  const MIN_ZOOM = 2;
+  const MAX_ZOOM = 20;
 
   function createLoupe() {
     if (loupe) return;
     loupe = document.createElement('div');
     loupe.id = 'loupe-overlay';
 
-    // Crosshair
     crosshair = document.createElement('div');
     crosshair.id = 'loupe-crosshair';
     loupe.appendChild(crosshair);
@@ -41,24 +42,19 @@
     if (!active || !loupe || !captureImg) return;
 
     const halfSize = SIZE / 2;
-    const dpr = window.devicePixelRatio || 1;
 
-    // Position loupe at cursor
     loupe.style.left = mouseX + 'px';
     loupe.style.top = mouseY + 'px';
     loupe.style.display = 'block';
 
-    // The captured image represents the viewport at device resolution
     const vpW = window.innerWidth;
     const vpH = window.innerHeight;
 
-    // Scale the screenshot by ZOOM
-    const bgW = vpW * ZOOM;
-    const bgH = vpH * ZOOM;
+    const bgW = vpW * zoom;
+    const bgH = vpH * zoom;
 
-    // Offset so the cursor point is centered in the loupe
-    const bgX = -mouseX * ZOOM + halfSize;
-    const bgY = -mouseY * ZOOM + halfSize;
+    const bgX = -mouseX * zoom + halfSize;
+    const bgY = -mouseY * zoom + halfSize;
 
     loupe.style.backgroundImage = `url(${captureImg})`;
     loupe.style.backgroundSize = `${bgW}px ${bgH}px`;
@@ -77,6 +73,12 @@
         });
       }
     }
+  }
+
+  function adjustZoom(delta) {
+    if (!active) return;
+    zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + delta));
+    updateLoupe();
   }
 
   function toggle() {
@@ -101,8 +103,24 @@
       e.preventDefault();
       e.stopPropagation();
       toggle();
+      return;
+    }
+    if (active) {
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        adjustZoom(1);
+      } else if (e.key === '-') {
+        e.preventDefault();
+        adjustZoom(-1);
+      }
     }
   }, true);
+
+  document.addEventListener('wheel', (e) => {
+    if (!active) return;
+    e.preventDefault();
+    adjustZoom(e.deltaY < 0 ? 1 : -1);
+  }, { passive: false, capture: true });
 
   document.addEventListener('mousemove', onMove);
 

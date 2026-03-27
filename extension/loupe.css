@@ -38,7 +38,7 @@
 #loupe-crosshair::after {
   content: '';
   position: absolute;
-  background: rgba(255, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
 }
 #loupe-crosshair::before {
   /* Horizontal line */
