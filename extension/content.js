@@ -1,44 +1,82 @@
 (() => {
   let active = false;
   let loupe = null;
+  let crosshair = null;
   let mouseX = 0;
   let mouseY = 0;
   let rafId = null;
+  let captureImg = null;
+  let captureTime = 0;
 
   const ZOOM = 5;
-  const SIZE = 200;
+  const SIZE = 180;
+  const CAPTURE_INTERVAL = 100; // ms between recaptures
 
   function createLoupe() {
     if (loupe) return;
     loupe = document.createElement('div');
     loupe.id = 'loupe-overlay';
+
+    // Crosshair
+    crosshair = document.createElement('div');
+    crosshair.id = 'loupe-crosshair';
+    loupe.appendChild(crosshair);
+
     document.body.appendChild(loupe);
   }
 
-  function ensureSourceId() {
-    // We need an ID on the element to reference with -moz-element()
-    if (!document.body.id) {
-      document.body.id = 'loupe-page-source';
-    }
-    return document.body.id;
+  function capture() {
+    const now = Date.now();
+    if (now - captureTime < CAPTURE_INTERVAL) return;
+    captureTime = now;
+    browser.runtime.sendMessage({ type: 'capture' }).then((dataUrl) => {
+      if (dataUrl) {
+        captureImg = dataUrl;
+        updateLoupe();
+      }
+    }).catch(() => {});
   }
 
   function updateLoupe() {
-    if (!active || !loupe) return;
+    if (!active || !loupe || !captureImg) return;
 
     const halfSize = SIZE / 2;
-    const originX = mouseX + window.scrollX;
-    const originY = mouseY + window.scrollY;
-    const sourceId = ensureSourceId();
+    const dpr = window.devicePixelRatio || 1;
 
+    // Position loupe at cursor
     loupe.style.left = mouseX + 'px';
     loupe.style.top = mouseY + 'px';
     loupe.style.display = 'block';
 
-    // Firefox-specific: -moz-element() renders a live snapshot of the referenced element
-    loupe.style.background = `-moz-element(#${sourceId}) no-repeat`;
-    loupe.style.backgroundSize = `${document.body.scrollWidth * ZOOM}px ${document.body.scrollHeight * ZOOM}px`;
-    loupe.style.backgroundPosition = `${-originX * ZOOM + halfSize}px ${-originY * ZOOM + halfSize}px`;
+    // The captured image represents the viewport at device resolution
+    const vpW = window.innerWidth;
+    const vpH = window.innerHeight;
+
+    // Scale the screenshot by ZOOM
+    const bgW = vpW * ZOOM;
+    const bgH = vpH * ZOOM;
+
+    // Offset so the cursor point is centered in the loupe
+    const bgX = -mouseX * ZOOM + halfSize;
+    const bgY = -mouseY * ZOOM + halfSize;
+
+    loupe.style.backgroundImage = `url(${captureImg})`;
+    loupe.style.backgroundSize = `${bgW}px ${bgH}px`;
+    loupe.style.backgroundPosition = `${bgX}px ${bgY}px`;
+  }
+
+  function onMove(e) {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    if (active) {
+      capture();
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          updateLoupe();
+        });
+      }
+    }
   }
 
   function toggle() {
@@ -46,10 +84,11 @@
     createLoupe();
     if (active) {
       document.body.classList.add('loupe-active');
-      updateLoupe();
+      capture();
     } else {
       document.body.classList.remove('loupe-active');
       loupe.style.display = 'none';
+      captureImg = null;
       if (rafId) {
         cancelAnimationFrame(rafId);
         rafId = null;
@@ -65,23 +104,17 @@
     }
   }, true);
 
-  document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    if (active && !rafId) {
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        updateLoupe();
-      });
-    }
-  });
+  document.addEventListener('mousemove', onMove);
 
   document.addEventListener('scroll', () => {
-    if (active && !rafId) {
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        updateLoupe();
-      });
+    if (active) {
+      capture();
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          updateLoupe();
+        });
+      }
     }
   }, true);
 })();
