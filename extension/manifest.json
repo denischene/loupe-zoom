@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "Loupe Zoom ×5",
+  "version": "1.0.0",
+  "description": "Ctrl+L pour activer/désactiver une loupe ×5 sur le curseur",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["loupe.css"]
+    }
+  ],
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
