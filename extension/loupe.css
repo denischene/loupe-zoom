@@ -1,0 +1,31 @@
+#loupe-overlay {
+  position: fixed;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.3), 0 8px 32px rgba(0,0,0,0.4);
+  pointer-events: none;
+  z-index: 2147483647;
+  overflow: hidden;
+  display: none;
+  background-repeat: no-repeat;
+  image-rendering: auto;
+  transform: translate(-50%, -50%);
+}
+
+#loupe-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.15);
+  pointer-events: none;
+}
+
+body.loupe-active {
+  cursor: none !important;
+}
+body.loupe-active * {
+  cursor: none !important;
+}
