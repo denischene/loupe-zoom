@@ -1,29 +1,58 @@
 (() => {
   let active = false;
   let loupe = null;
-  let crosshair = null;
+  let zoomLabel = null;
   let mouseX = 0;
   let mouseY = 0;
   let rafId = null;
   let captureImg = null;
   let captureTime = 0;
+  let zoomLabelTimeout = null;
 
   let zoom = 5;
-  const SIZE = 180;
   const CAPTURE_INTERVAL = 100;
   const MIN_ZOOM = 2;
-  const MAX_ZOOM = 20;
+  const MAX_ZOOM = 15;
+
+  // Size/shape tiers based on zoom level
+  function getLoupeStyle(z) {
+    if (z <= 5) return { w: 180, h: 180, radius: '50%' };
+    if (z <= 9) return { w: 280, h: 200, radius: '16px' };
+    if (z <= 13) return { w: 400, h: 260, radius: '16px' };
+    return { w: 520, h: 320, radius: '16px' };
+  }
 
   function createLoupe() {
     if (loupe) return;
     loupe = document.createElement('div');
     loupe.id = 'loupe-overlay';
 
-    crosshair = document.createElement('div');
-    crosshair.id = 'loupe-crosshair';
-    loupe.appendChild(crosshair);
+    zoomLabel = document.createElement('div');
+    zoomLabel.id = 'loupe-zoom-label';
+    zoomLabel.style.display = 'none';
+    loupe.appendChild(zoomLabel);
 
     document.body.appendChild(loupe);
+  }
+
+  function applyLoupeSize() {
+    if (!loupe) return;
+    const s = getLoupeStyle(zoom);
+    loupe.style.width = s.w + 'px';
+    loupe.style.height = s.h + 'px';
+    loupe.style.borderRadius = s.radius;
+  }
+
+  function showZoomIndicator() {
+    if (!zoomLabel) return;
+    zoomLabel.textContent = '×' + zoom;
+    zoomLabel.style.display = 'block';
+    zoomLabel.style.opacity = '1';
+    if (zoomLabelTimeout) clearTimeout(zoomLabelTimeout);
+    zoomLabelTimeout = setTimeout(() => {
+      zoomLabel.style.opacity = '0';
+      setTimeout(() => { zoomLabel.style.display = 'none'; }, 300);
+    }, 2000);
   }
 
   function capture() {
@@ -41,7 +70,9 @@
   function updateLoupe() {
     if (!active || !loupe || !captureImg) return;
 
-    const halfSize = SIZE / 2;
+    const s = getLoupeStyle(zoom);
+    const halfW = s.w / 2;
+    const halfH = s.h / 2;
 
     loupe.style.left = mouseX + 'px';
     loupe.style.top = mouseY + 'px';
@@ -53,8 +84,8 @@
     const bgW = vpW * zoom;
     const bgH = vpH * zoom;
 
-    const bgX = -mouseX * zoom + halfSize;
-    const bgY = -mouseY * zoom + halfSize;
+    const bgX = -mouseX * zoom + halfW;
+    const bgY = -mouseY * zoom + halfH;
 
     loupe.style.backgroundImage = `url(${captureImg})`;
     loupe.style.backgroundSize = `${bgW}px ${bgH}px`;
@@ -78,24 +109,51 @@
   function adjustZoom(delta) {
     if (!active) return;
     zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + delta));
+    applyLoupeSize();
     updateLoupe();
+    showZoomIndicator();
+  }
+
+  function activate() {
+    active = true;
+    createLoupe();
+    applyLoupeSize();
+    document.body.classList.add('loupe-active');
+    capture();
+    // Persist state
+    try { sessionStorage.setItem('__loupe_active', '1'); } catch(e) {}
+    try { sessionStorage.setItem('__loupe_zoom', String(zoom)); } catch(e) {}
+  }
+
+  function deactivate() {
+    active = false;
+    document.body.classList.remove('loupe-active');
+    if (loupe) {
+      loupe.style.display = 'none';
+    }
+    captureImg = null;
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    try { sessionStorage.removeItem('__loupe_active'); } catch(e) {}
+    try { sessionStorage.removeItem('__loupe_zoom'); } catch(e) {}
   }
 
   function toggle() {
-    active = !active;
-    createLoupe();
-    if (active) {
-      document.body.classList.add('loupe-active');
-      capture();
-    } else {
-      document.body.classList.remove('loupe-active');
-      loupe.style.display = 'none';
-      captureImg = null;
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
+    if (active) deactivate();
+    else activate();
+  }
+
+  // Restore state on page load (same-tab navigation)
+  function restoreState() {
+    try {
+      if (sessionStorage.getItem('__loupe_active') === '1') {
+        const savedZoom = parseInt(sessionStorage.getItem('__loupe_zoom'), 10);
+        if (savedZoom >= MIN_ZOOM && savedZoom <= MAX_ZOOM) zoom = savedZoom;
+        activate();
       }
-    }
+    } catch(e) {}
   }
 
   document.addEventListener('keydown', (e) => {
@@ -135,4 +193,15 @@
       }
     }
   }, true);
+
+  // For new-tab persistence, listen for messages from background
+  browser.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'activate_loupe') {
+      zoom = msg.zoom || 5;
+      activate();
+    }
+  });
+
+  // Restore on load
+  restoreState();
 })();
