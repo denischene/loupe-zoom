@@ -1,12 +1,19 @@
 {
   "manifest_version": 2,
   "name": "Loupe Zoom",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Ctrl+L pour activer/désactiver une loupe zoom sur le curseur",
   "permissions": ["activeTab", "<all_urls>"],
   "background": {
     "scripts": ["background.js"],
     "persistent": false
+  },
+  "browser_action": {
+    "default_icon": {
+      "48": "icon.png",
+      "128": "icon.png"
+    },
+    "default_title": "Loupe Zoom (Ctrl+L)"
   },
   "content_scripts": [
     {
