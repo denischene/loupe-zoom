@@ -7,16 +7,22 @@
   let rafId = null;
   let zoomLabelTimeout = null;
   let capturing = false;
-
-  // Double-buffer: keep current + next screenshot
   let currentImg = null;
-  let nextImg = null;
 
   let zoom = 5;
-  const CAPTURE_INTERVAL = 120;
+  const CAPTURE_INTERVAL = 80;
   const MIN_ZOOM = 2;
   const MAX_ZOOM = 15;
   let lastCaptureTime = 0;
+
+  // Focus tracking
+  let focusMode = false;
+  let focusTarget = null;
+  let focusScrollTimer = null;
+  let focusInactivityTimer = null;
+  let focusScrollOffset = 0;
+  let focusScrollDirection = 1;
+  let focusScrollRaf = null;
 
   function getDefaultZoom() {
     try {
@@ -26,10 +32,16 @@
     return 5;
   }
 
-  function getLoupeStyle(z) {
-    if (z <= 5) return { w: 180, h: 180, radius: '50%' };
+  function getLoupeStyle(z, isFocus) {
+    if (isFocus) {
+      if (z <= 4) return { w: 320, h: 180, radius: '16px' };
+      if (z <= 9) return { w: 400, h: 260, radius: '16px' };
+      if (z <= 12) return { w: 520, h: 320, radius: '16px' };
+      return { w: 820, h: 400, radius: '16px' };
+    }
+    if (z <= 4) return { w: 180, h: 180, radius: '50%' };
     if (z <= 9) return { w: 400, h: 260, radius: '16px' };
-    if (z <= 13) return { w: 520, h: 320, radius: '16px' };
+    if (z <= 12) return { w: 520, h: 320, radius: '16px' };
     return { w: 820, h: 400, radius: '16px' };
   }
 
@@ -48,7 +60,7 @@
 
   function applyLoupeSize() {
     if (!loupe) return;
-    const s = getLoupeStyle(zoom);
+    const s = getLoupeStyle(zoom, focusMode);
     loupe.style.width = s.w + 'px';
     loupe.style.height = s.h + 'px';
     loupe.style.borderRadius = s.radius;
@@ -66,37 +78,45 @@
     }, 2000);
   }
 
-  function capture() {
+  function capture(cb) {
     const now = Date.now();
     if (now - lastCaptureTime < CAPTURE_INTERVAL || capturing) return;
     lastCaptureTime = now;
     capturing = true;
 
+    // Hide loupe before capturing to avoid recursive zoom
+    if (loupe) loupe.style.visibility = 'hidden';
+
     browser.runtime.sendMessage({ type: 'capture' }).then((dataUrl) => {
       capturing = false;
+      if (loupe) loupe.style.visibility = 'visible';
       if (dataUrl) {
-        // Preload image before swapping to avoid flicker
         const img = new Image();
         img.onload = () => {
           currentImg = dataUrl;
-          updateLoupe();
+          if (cb) cb();
+          else updateLoupe();
         };
         img.src = dataUrl;
       }
     }).catch(() => {
       capturing = false;
+      if (loupe) loupe.style.visibility = 'visible';
     });
   }
 
   function updateLoupe() {
     if (!active || !loupe || !currentImg) return;
 
-    const s = getLoupeStyle(zoom);
+    const s = getLoupeStyle(zoom, focusMode);
     const halfW = s.w / 2;
     const halfH = s.h / 2;
 
-    loupe.style.left = mouseX + 'px';
-    loupe.style.top = mouseY + 'px';
+    const posX = focusMode ? focusX : mouseX;
+    const posY = focusMode ? focusY : mouseY;
+
+    loupe.style.left = posX + 'px';
+    loupe.style.top = posY + 'px';
     loupe.style.display = 'block';
 
     const vpW = window.innerWidth;
@@ -105,8 +125,8 @@
     const bgW = vpW * zoom;
     const bgH = vpH * zoom;
 
-    const bgX = -mouseX * zoom + halfW;
-    const bgY = -mouseY * zoom + halfH;
+    const bgX = -posX * zoom + halfW - (focusMode ? focusScrollOffset * zoom : 0);
+    const bgY = -posY * zoom + halfH;
 
     loupe.style.backgroundImage = `url(${currentImg})`;
     loupe.style.backgroundSize = `${bgW}px ${bgH}px`;
@@ -116,7 +136,7 @@
   function onMove(e) {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    if (active) {
+    if (active && !focusMode) {
       capture();
       if (!rafId) {
         rafId = requestAnimationFrame(() => {
@@ -148,15 +168,12 @@
 
   function deactivate() {
     active = false;
+    focusMode = false;
+    clearFocusTimers();
     document.body.classList.remove('loupe-active');
-    if (loupe) {
-      loupe.style.display = 'none';
-    }
+    if (loupe) loupe.style.display = 'none';
     currentImg = null;
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
-    }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     try { sessionStorage.removeItem('__loupe_active'); } catch(e) {}
     try { sessionStorage.removeItem('__loupe_zoom'); } catch(e) {}
   }
@@ -179,7 +196,108 @@
     } catch(e) {}
   }
 
-  // Keyboard: Ctrl+L to toggle, +/- (no Ctrl) to adjust zoom
+  // === FOCUS TRACKING ===
+  let focusX = 0;
+  let focusY = 0;
+
+  function clearFocusTimers() {
+    if (focusScrollTimer) { clearInterval(focusScrollTimer); focusScrollTimer = null; }
+    if (focusInactivityTimer) { clearTimeout(focusInactivityTimer); focusInactivityTimer = null; }
+    if (focusScrollRaf) { cancelAnimationFrame(focusScrollRaf); focusScrollRaf = null; }
+    focusScrollOffset = 0;
+  }
+
+  function startFocusOnElement(el) {
+    if (!active) return;
+    clearFocusTimers();
+    focusMode = true;
+    focusTarget = el;
+    focusScrollOffset = 0;
+
+    const rect = el.getBoundingClientRect();
+    focusX = rect.left + rect.width / 2;
+    focusY = rect.top + rect.height / 2;
+
+    applyLoupeSize();
+    capture(() => {
+      updateLoupe();
+      // Check if element is wider than loupe view
+      const s = getLoupeStyle(zoom, true);
+      const visibleWidth = s.w / zoom;
+      if (rect.width > visibleWidth) {
+        startFocusAutoScroll(rect, visibleWidth);
+      } else {
+        startFocusInactivityTimer();
+      }
+    });
+  }
+
+  function startFocusAutoScroll(rect, visibleWidth) {
+    const maxScroll = rect.width - visibleWidth;
+    const scrollSpeed = 0.5; // px per frame
+    focusScrollOffset = 0;
+    focusScrollDirection = 1;
+
+    function scrollStep() {
+      focusScrollOffset += scrollSpeed * focusScrollDirection;
+      if (focusScrollOffset >= maxScroll) {
+        focusScrollOffset = maxScroll;
+        focusScrollDirection = 0; // stop
+        // Capture and update one last time then start inactivity
+        capture(() => {
+          updateLoupe();
+          startFocusInactivityTimer();
+        });
+        return;
+      }
+      // Re-capture periodically during scroll
+      capture(() => updateLoupe());
+      updateLoupe();
+      focusScrollRaf = requestAnimationFrame(scrollStep);
+    }
+    focusScrollRaf = requestAnimationFrame(scrollStep);
+  }
+
+  function startFocusInactivityTimer() {
+    if (focusInactivityTimer) clearTimeout(focusInactivityTimer);
+    focusInactivityTimer = setTimeout(() => {
+      // Auto dezoom: exit focus mode
+      focusMode = false;
+      focusTarget = null;
+      clearFocusTimers();
+      if (loupe) loupe.style.display = 'none';
+    }, 5000);
+  }
+
+  function onFocusChange(e) {
+    if (!active) return;
+    const el = e.target;
+    if (!el || el === document || el === document.body) return;
+    // Check if element is activatable
+    const tag = el.tagName;
+    const isActivatable = tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' ||
+      tag === 'SELECT' || tag === 'TEXTAREA' || el.hasAttribute('tabindex') ||
+      el.hasAttribute('onclick') || el.getAttribute('role') === 'button' ||
+      el.getAttribute('role') === 'link' || el.getAttribute('role') === 'checkbox' ||
+      el.getAttribute('role') === 'menuitem';
+
+    if (isActivatable || el.closest('a, button')) {
+      startFocusOnElement(el);
+    }
+  }
+
+  document.addEventListener('focusin', onFocusChange, true);
+
+  // When mouse moves, exit focus mode
+  document.addEventListener('mousemove', (e) => {
+    if (focusMode && active) {
+      focusMode = false;
+      clearFocusTimers();
+      applyLoupeSize();
+    }
+  }, true);
+
+  // === KEYBOARD ===
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'l') {
       e.preventDefault();
@@ -208,7 +326,7 @@
   document.addEventListener('mousemove', onMove);
 
   document.addEventListener('scroll', () => {
-    if (active) {
+    if (active && !focusMode) {
       capture();
       if (!rafId) {
         rafId = requestAnimationFrame(() => {
@@ -219,14 +337,10 @@
     }
   }, true);
 
-  // Listen for toolbar button toggle
+  // Listen for toolbar button toggle and commands
   browser.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'toggle_loupe') {
       toggle();
-    }
-    if (msg.type === 'activate_loupe') {
-      zoom = msg.zoom || getDefaultZoom();
-      activate();
     }
     if (msg.type === 'update_default_zoom') {
       try { localStorage.setItem('__loupe_default_zoom', String(msg.zoom)); } catch(e) {}

@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "Loupe Zoom",
-  "version": "1.4.0",
-  "description": "Ctrl+L pour activer/désactiver une loupe zoom sur le curseur",
+  "version": "2.0.0",
+  "description": "Loupe de zoom sur le curseur ou le focus clavier",
   "permissions": ["activeTab", "<all_urls>", "storage"],
   "background": {
     "scripts": ["background.js"],
@@ -13,8 +13,19 @@
       "48": "icon.png",
       "128": "icon.png"
     },
-    "default_title": "Loupe Zoom (Ctrl+L)",
-    "default_popup": "popup.html"
+    "default_title": "Loupe Zoom"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "commands": {
+    "toggle-loupe": {
+      "suggested_key": {
+        "default": "Ctrl+L"
+      },
+      "description": "Activer/désactiver la loupe"
+    }
   },
   "content_scripts": [
     {
