@@ -5,21 +5,32 @@
   let mouseX = 0;
   let mouseY = 0;
   let rafId = null;
-  let captureImg = null;
-  let captureTime = 0;
   let zoomLabelTimeout = null;
   let capturing = false;
 
+  // Double-buffer: keep current + next screenshot
+  let currentImg = null;
+  let nextImg = null;
+
   let zoom = 5;
-  const CAPTURE_INTERVAL = 80;
+  const CAPTURE_INTERVAL = 120;
   const MIN_ZOOM = 2;
   const MAX_ZOOM = 15;
+  let lastCaptureTime = 0;
+
+  function getDefaultZoom() {
+    try {
+      const v = parseInt(localStorage.getItem('__loupe_default_zoom'), 10);
+      if (v >= MIN_ZOOM && v <= MAX_ZOOM) return v;
+    } catch(e) {}
+    return 5;
+  }
 
   function getLoupeStyle(z) {
     if (z <= 5) return { w: 180, h: 180, radius: '50%' };
-    if (z <= 9) return { w: 280, h: 200, radius: '16px' };
-    if (z <= 13) return { w: 400, h: 260, radius: '16px' };
-    return { w: 520, h: 320, radius: '16px' };
+    if (z <= 9) return { w: 400, h: 260, radius: '16px' };
+    if (z <= 13) return { w: 520, h: 320, radius: '16px' };
+    return { w: 820, h: 400, radius: '16px' };
   }
 
   function createLoupe() {
@@ -45,7 +56,7 @@
 
   function showZoomIndicator() {
     if (!zoomLabel) return;
-    zoomLabel.textContent = '×' + zoom;
+    zoomLabel.textContent = '\u00d7' + zoom;
     zoomLabel.style.display = 'block';
     zoomLabel.style.opacity = '1';
     if (zoomLabelTimeout) clearTimeout(zoomLabelTimeout);
@@ -57,31 +68,28 @@
 
   function capture() {
     const now = Date.now();
-    if (now - captureTime < CAPTURE_INTERVAL || capturing) return;
-    captureTime = now;
+    if (now - lastCaptureTime < CAPTURE_INTERVAL || capturing) return;
+    lastCaptureTime = now;
     capturing = true;
 
-    // Hide loupe before capture so it doesn't appear in the screenshot
-    if (loupe) loupe.style.visibility = 'hidden';
-
-    // Small delay to let the browser repaint without the loupe
-    requestAnimationFrame(() => {
-      browser.runtime.sendMessage({ type: 'capture' }).then((dataUrl) => {
-        capturing = false;
-        if (loupe) loupe.style.visibility = 'visible';
-        if (dataUrl) {
-          captureImg = dataUrl;
+    browser.runtime.sendMessage({ type: 'capture' }).then((dataUrl) => {
+      capturing = false;
+      if (dataUrl) {
+        // Preload image before swapping to avoid flicker
+        const img = new Image();
+        img.onload = () => {
+          currentImg = dataUrl;
           updateLoupe();
-        }
-      }).catch(() => {
-        capturing = false;
-        if (loupe) loupe.style.visibility = 'visible';
-      });
+        };
+        img.src = dataUrl;
+      }
+    }).catch(() => {
+      capturing = false;
     });
   }
 
   function updateLoupe() {
-    if (!active || !loupe || !captureImg) return;
+    if (!active || !loupe || !currentImg) return;
 
     const s = getLoupeStyle(zoom);
     const halfW = s.w / 2;
@@ -91,7 +99,6 @@
     loupe.style.top = mouseY + 'px';
     loupe.style.display = 'block';
 
-    const dpr = window.devicePixelRatio || 1;
     const vpW = window.innerWidth;
     const vpH = window.innerHeight;
 
@@ -101,7 +108,7 @@
     const bgX = -mouseX * zoom + halfW;
     const bgY = -mouseY * zoom + halfH;
 
-    loupe.style.backgroundImage = `url(${captureImg})`;
+    loupe.style.backgroundImage = `url(${currentImg})`;
     loupe.style.backgroundSize = `${bgW}px ${bgH}px`;
     loupe.style.backgroundPosition = `${bgX}px ${bgY}px`;
   }
@@ -145,7 +152,7 @@
     if (loupe) {
       loupe.style.display = 'none';
     }
-    captureImg = null;
+    currentImg = null;
     if (rafId) {
       cancelAnimationFrame(rafId);
       rafId = null;
@@ -156,7 +163,10 @@
 
   function toggle() {
     if (active) deactivate();
-    else activate();
+    else {
+      zoom = getDefaultZoom();
+      activate();
+    }
   }
 
   function restoreState() {
@@ -169,7 +179,7 @@
     } catch(e) {}
   }
 
-  // Keyboard: Ctrl+L to toggle, +/- (no Ctrl needed) to adjust zoom
+  // Keyboard: Ctrl+L to toggle, +/- (no Ctrl) to adjust zoom
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'l') {
       e.preventDefault();
@@ -215,8 +225,11 @@
       toggle();
     }
     if (msg.type === 'activate_loupe') {
-      zoom = msg.zoom || 5;
+      zoom = msg.zoom || getDefaultZoom();
       activate();
+    }
+    if (msg.type === 'update_default_zoom') {
+      try { localStorage.setItem('__loupe_default_zoom', String(msg.zoom)); } catch(e) {}
     }
   });
 
