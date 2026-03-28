@@ -8,13 +8,13 @@
   let captureImg = null;
   let captureTime = 0;
   let zoomLabelTimeout = null;
+  let capturing = false;
 
   let zoom = 5;
-  const CAPTURE_INTERVAL = 100;
+  const CAPTURE_INTERVAL = 80;
   const MIN_ZOOM = 2;
   const MAX_ZOOM = 15;
 
-  // Size/shape tiers based on zoom level
   function getLoupeStyle(z) {
     if (z <= 5) return { w: 180, h: 180, radius: '50%' };
     if (z <= 9) return { w: 280, h: 200, radius: '16px' };
@@ -57,14 +57,27 @@
 
   function capture() {
     const now = Date.now();
-    if (now - captureTime < CAPTURE_INTERVAL) return;
+    if (now - captureTime < CAPTURE_INTERVAL || capturing) return;
     captureTime = now;
-    browser.runtime.sendMessage({ type: 'capture' }).then((dataUrl) => {
-      if (dataUrl) {
-        captureImg = dataUrl;
-        updateLoupe();
-      }
-    }).catch(() => {});
+    capturing = true;
+
+    // Hide loupe before capture so it doesn't appear in the screenshot
+    if (loupe) loupe.style.visibility = 'hidden';
+
+    // Small delay to let the browser repaint without the loupe
+    requestAnimationFrame(() => {
+      browser.runtime.sendMessage({ type: 'capture' }).then((dataUrl) => {
+        capturing = false;
+        if (loupe) loupe.style.visibility = 'visible';
+        if (dataUrl) {
+          captureImg = dataUrl;
+          updateLoupe();
+        }
+      }).catch(() => {
+        capturing = false;
+        if (loupe) loupe.style.visibility = 'visible';
+      });
+    });
   }
 
   function updateLoupe() {
@@ -78,6 +91,7 @@
     loupe.style.top = mouseY + 'px';
     loupe.style.display = 'block';
 
+    const dpr = window.devicePixelRatio || 1;
     const vpW = window.innerWidth;
     const vpH = window.innerHeight;
 
@@ -112,6 +126,7 @@
     applyLoupeSize();
     updateLoupe();
     showZoomIndicator();
+    try { sessionStorage.setItem('__loupe_zoom', String(zoom)); } catch(e) {}
   }
 
   function activate() {
@@ -120,7 +135,6 @@
     applyLoupeSize();
     document.body.classList.add('loupe-active');
     capture();
-    // Persist state
     try { sessionStorage.setItem('__loupe_active', '1'); } catch(e) {}
     try { sessionStorage.setItem('__loupe_zoom', String(zoom)); } catch(e) {}
   }
@@ -145,7 +159,6 @@
     else activate();
   }
 
-  // Restore state on page load (same-tab navigation)
   function restoreState() {
     try {
       if (sessionStorage.getItem('__loupe_active') === '1') {
@@ -156,6 +169,7 @@
     } catch(e) {}
   }
 
+  // Keyboard: Ctrl+L to toggle, +/- (no Ctrl needed) to adjust zoom
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'l') {
       e.preventDefault();
@@ -163,7 +177,7 @@
       toggle();
       return;
     }
-    if (active) {
+    if (active && !e.ctrlKey && !e.altKey && !e.metaKey) {
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
         adjustZoom(1);
@@ -174,8 +188,9 @@
     }
   }, true);
 
+  // Wheel: only Ctrl+wheel adjusts zoom
   document.addEventListener('wheel', (e) => {
-    if (!active) return;
+    if (!active || !e.ctrlKey) return;
     e.preventDefault();
     adjustZoom(e.deltaY < 0 ? 1 : -1);
   }, { passive: false, capture: true });
@@ -194,14 +209,16 @@
     }
   }, true);
 
-  // For new-tab persistence, listen for messages from background
+  // Listen for toolbar button toggle
   browser.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'toggle_loupe') {
+      toggle();
+    }
     if (msg.type === 'activate_loupe') {
       zoom = msg.zoom || 5;
       activate();
     }
   });
 
-  // Restore on load
   restoreState();
 })();
