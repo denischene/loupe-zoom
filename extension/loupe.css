@@ -15,32 +15,6 @@
   will-change: left, top, background-position;
 }
 
-#loupe-overlay::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1px;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  transform: translate(-50%, -50%);
-  z-index: 3;
-  pointer-events: none;
-}
-
-#loupe-overlay::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 1px;
-  background: rgba(0, 0, 0, 0.5);
-  transform: translate(-50%, -50%);
-  z-index: 3;
-  pointer-events: none;
-}
-
 /* Zoom level indicator */
 #loupe-zoom-label {
   position: absolute;

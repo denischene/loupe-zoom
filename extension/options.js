@@ -9,7 +9,6 @@
     select.appendChild(opt);
   }
 
-  // Load saved default
   browser.storage.local.get('defaultZoom').then((data) => {
     select.value = data.defaultZoom || 5;
   });
