@@ -1,7 +1,16 @@
+// Track which tabs have loupe active/pending
+const activeTabs = new Set();
+
 // Handle capture requests
 browser.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === 'capture') {
     return browser.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 85 });
+  }
+  if (msg.type === 'loupe_active' && sender.tab) {
+    activeTabs.add(sender.tab.id);
+  }
+  if (msg.type === 'loupe_off' && sender.tab) {
+    activeTabs.delete(sender.tab.id);
   }
   return false;
 });
@@ -20,4 +29,21 @@ browser.commands.onCommand.addListener((command) => {
       }
     });
   }
+});
+
+// When a new tab is opened from a tab with active loupe, start in pending mode
+browser.tabs.onCreated.addListener((tab) => {
+  if (tab.openerTabId && activeTabs.has(tab.openerTabId)) {
+    const sendPending = (attempts) => {
+      browser.tabs.sendMessage(tab.id, { type: 'start_pending' }).catch(() => {
+        if (attempts < 15) setTimeout(() => sendPending(attempts + 1), 300);
+      });
+    };
+    setTimeout(() => sendPending(0), 500);
+  }
+});
+
+// Clean up on tab close
+browser.tabs.onRemoved.addListener((tabId) => {
+  activeTabs.delete(tabId);
 });

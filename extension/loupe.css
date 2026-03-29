@@ -10,6 +10,7 @@
   overflow: hidden;
   display: none;
   background-repeat: no-repeat;
+  background-color: #000;
   image-rendering: auto;
   transform: translate(-50%, -50%);
   will-change: left, top, background-position;
@@ -32,9 +33,33 @@
   white-space: nowrap;
 }
 
+/* Pending indicator (small loupe icon above focused element) */
+#loupe-pending-icon {
+  position: fixed;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 2147483647;
+  display: none;
+}
+
+/* Active mode: hide cursor */
 body.loupe-active {
   cursor: none !important;
 }
 body.loupe-active * {
   cursor: none !important;
+}
+
+/* Pending mode: arrow cursor with loupe hint */
+body.loupe-pending {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cpath d='M2 2l0 18 5-5 5 9 3-2-5-9 7 0z' fill='%23000' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='24' cy='9' r='5' fill='none' stroke='%23555' stroke-width='2'/%3E%3Cline x1='28' y1='13' x2='31' y2='16' stroke='%23555' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 2 2, auto !important;
+}
+body.loupe-pending * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cpath d='M2 2l0 18 5-5 5 9 3-2-5-9 7 0z' fill='%23000' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='24' cy='9' r='5' fill='none' stroke='%23555' stroke-width='2'/%3E%3Cline x1='28' y1='13' x2='31' y2='16' stroke='%23555' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 2 2, auto !important;
+}
+
+/* Pending focus outline */
+body.loupe-pending *:focus {
+  outline: 3px solid #0066ff !important;
+  outline-offset: 2px !important;
 }
