@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Loupe Zoom",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Loupe de zoom sur le curseur ou le focus clavier",
   "permissions": ["activeTab", "<all_urls>", "storage"],
   "background": {
