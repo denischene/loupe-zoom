@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Loupe Zoom",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Loupe de zoom sur le curseur ou le focus clavier",
   "permissions": ["activeTab", "<all_urls>", "storage"],
   "background": {
@@ -13,7 +13,19 @@
       "48": "icon.png",
       "128": "icon.png"
     },
-    "default_title": "Loupe Zoom"
+    "default_title": "Loupe Zoom",
+    "theme_icons": [
+      {
+        "light": "icon.png",
+        "dark": "icon-light.png",
+        "size": 48
+      },
+      {
+        "light": "icon.png",
+        "dark": "icon-light.png",
+        "size": 128
+      }
+    ]
   },
   "options_ui": {
     "page": "options.html",
