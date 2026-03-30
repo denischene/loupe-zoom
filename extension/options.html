@@ -9,12 +9,17 @@
       margin: 0;
       background: #f5f5f5;
       color: #333;
-      max-width: 400px;
+      max-width: 480px;
     }
     h2 {
       margin: 0 0 16px;
       font-size: 18px;
       color: #111;
+    }
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 14px;
+      color: #222;
     }
     label {
       display: block;
@@ -49,6 +54,40 @@
       color: #1e5a8a;
       line-height: 1.5;
     }
+    .commands {
+      margin-top: 20px;
+      padding: 14px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #333;
+    }
+    .commands ul {
+      margin: 4px 0 12px 0;
+      padding-left: 18px;
+    }
+    .commands li { margin-bottom: 4px; }
+    kbd {
+      background: #eee;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 12px;
+      font-family: monospace;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #1e5a8a;
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -60,6 +99,30 @@
     Pour modifier le raccourci clavier, allez dans<br>
     <strong>about:addons → ⚙️ → Gérer les raccourcis d'extension</strong>
   </div>
+
+  <div class="commands">
+    <h3>⌨️ Commandes au clavier</h3>
+    <ul>
+      <li><kbd>Ctrl</kbd>+<kbd>L</kbd> pour activer/désactiver l'extension loupe. Une fois activée, un petit logo loupe apparaît alors au-dessus du focus.</li>
+      <li><kbd>Entrée</kbd> pour faire apparaître la loupe. Quand la loupe est lancée, la touche <kbd>Entrée</kbd> sur un élément activable (hyperlien, bouton) valide l'élément.</li>
+      <li><kbd>Échap.</kbd> pour faire disparaître la loupe.</li>
+      <li><kbd>Tab</kbd> / <kbd>Maj.</kbd>+<kbd>Tab</kbd> pour déplacer le focus d'élément en élément.</li>
+    </ul>
+
+    <h3>🖱️ Commandes à la souris</h3>
+    <ul>
+      <li>Cliquer sur l'icône Loupe pour activer/désactiver l'extension loupe.</li>
+      <li><kbd>Échap.</kbd> pour faire disparaître la loupe. Elle reste disponible au bout de la souris, il suffit de faire un 1<sup>er</sup> clic.</li>
+      <li>Un second clic depuis la loupe visible valide l'élément (hyperlien, bouton).</li>
+      <li><kbd>Ctrl</kbd>+<kbd>molette haut-bas</kbd> permet de changer le niveau de zoom.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    Auteur : <strong>Chêne Denis</strong><br>
+    <a href="https://github.com/DenisChene/loupe-zoom" target="_blank">🔗 Projet sur GitHub</a>
+  </div>
+
   <script src="options.js"></script>
 </body>
 </html>
