@@ -140,8 +140,8 @@
     cursorRing.style.opacity = '1';
     setTimeout(() => {
       cursorRing.style.opacity = '0';
-      setTimeout(() => { cursorRing.style.display = 'none'; }, 400);
-    }, 600);
+      setTimeout(() => { cursorRing.style.display = 'none'; }, 600);
+    }, 1400);
   }
 
   // === CAPTURE (smart: on-demand + slow periodic) ===
@@ -422,15 +422,8 @@
     const actualVisibleW = actualStyle.w / zoom;
     const actualVisibleH = actualStyle.h / zoom;
 
-    // Compute vertical parts
-    focusVerticalParts = Math.max(1, Math.ceil(rect.height / actualVisibleH));
     focusVerticalPart = 0;
     focusVerticalOffset = 0;
-
-    // For multi-part: center loupe on top of element for first part
-    if (focusVerticalParts > 1) {
-      focusY = rect.top + actualVisibleH / 2;
-    }
 
     stopSlowCapture();
     doCapture(() => {
@@ -438,9 +431,9 @@
       startSlowCapture();
 
       const needsHScroll = rect.width > actualVisibleW;
-      const needsVParts = focusVerticalParts > 1;
+      const needsVScroll = rect.height > actualVisibleH;
 
-      if (needsHScroll || needsVParts) {
+      if (needsHScroll || needsVScroll) {
         setTimeout(() => { startFocusMultiPartScroll(rect, actualVisibleW, actualVisibleH); }, 1000);
       } else {
         startFocusInactivityTimer();
@@ -451,21 +444,20 @@
   function startFocusMultiPartScroll(rect, visibleWidth, visibleHeight) {
     if (state !== 'active_focus') return;
 
-    const totalParts = focusVerticalParts;
-    let currentPart = 0;
+    // Calculate how many vertical "rows" we need (each row = 2 text lines tall in zoom space)
+    const lineHeight = 2 * 16; // ~2 lines at 16px each in page pixels
+    const totalScrollHeight = rect.height - visibleHeight;
+    let currentVerticalOffset = 0;
 
-    function scrollPart() {
+    function scrollRow() {
       if (state !== 'active_focus') return;
 
-      // Set vertical offset for this part
-      focusVerticalPart = currentPart;
-      focusVerticalOffset = currentPart * visibleHeight;
+      // Set vertical offset
+      focusVerticalOffset = currentVerticalOffset;
 
-      // Update focusY to center on this vertical part
-      const partTop = rect.top + currentPart * visibleHeight;
-      focusY = partTop + visibleHeight / 2;
-
-      // Clamp focusY
+      // Update focusY based on current vertical offset
+      const effectiveTop = rect.top - currentVerticalOffset;
+      focusY = effectiveTop + visibleHeight / 2;
       const s = getLoupeStyle(zoom, true);
       focusY = Math.max(s.h / 2, Math.min(window.innerHeight - s.h / 2, focusY));
 
@@ -475,29 +467,21 @@
       const needsHScroll = rect.width > visibleWidth;
 
       if (needsHScroll) {
-        // Horizontal scroll for this part
-        const maxScroll = rect.width - visibleWidth;
+        // Horizontal scroll for this row
+        const maxHScroll = rect.width - visibleWidth;
         focusScrollOffset = 0;
-        focusScrollDirection = 1;
         const scrollSpeed = 0.5;
 
         function hScrollStep() {
           if (state !== 'active_focus') return;
-          focusScrollOffset += scrollSpeed * focusScrollDirection;
-          if (focusScrollOffset >= maxScroll) {
-            focusScrollOffset = maxScroll;
+          focusScrollOffset += scrollSpeed;
+          if (focusScrollOffset >= maxHScroll) {
+            focusScrollOffset = maxHScroll;
             updateLoupe();
-            // After h-scroll ends, wait 2s then scroll back left over 2s
+            // Wait 2s then scroll back left over 2s
             setTimeout(() => {
-              scrollBackLeft(maxScroll, () => {
-                // Move to next vertical part
-                currentPart++;
-                if (currentPart < totalParts) {
-                  // 1s pause before next part
-                  setTimeout(() => { scrollPart(); }, 1000);
-                } else {
-                  startFocusInactivityTimer();
-                }
+              scrollBackLeft(maxHScroll, () => {
+                advanceVertical();
               });
             }, 2000);
             return;
@@ -507,17 +491,24 @@
         }
         focusScrollRaf = requestAnimationFrame(hScrollStep);
       } else {
-        // No h-scroll needed for this part, wait then next part
-        currentPart++;
-        if (currentPart < totalParts) {
-          setTimeout(() => { scrollPart(); }, 1000);
-        } else {
-          startFocusInactivityTimer();
-        }
+        // No horizontal scroll needed, just advance vertically after a pause
+        setTimeout(() => { advanceVertical(); }, 1000);
       }
     }
 
-    scrollPart();
+    function advanceVertical() {
+      if (state !== 'active_focus') return;
+      currentVerticalOffset += lineHeight;
+      if (currentVerticalOffset <= totalScrollHeight && totalScrollHeight > 0) {
+        // 1s pause before next row
+        setTimeout(() => { scrollRow(); }, 1000);
+      } else {
+        // Done with all rows
+        startFocusInactivityTimer();
+      }
+    }
+
+    scrollRow();
   }
 
   function scrollBackLeft(maxScroll, cb) {
