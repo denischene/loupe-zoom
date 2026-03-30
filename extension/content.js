@@ -364,6 +364,9 @@
     focusScrollOffset = 0;
     focusLoupeOverride = null;
 
+    // Scroll element into view if partially or fully off-screen
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+
     const rect = el.getBoundingClientRect();
     focusX = rect.left + rect.width / 2;
     focusY = rect.top + rect.height / 2;
