@@ -3,6 +3,8 @@
   "name": "Loupe Zoom",
   "version": "3.2.0",
   "description": "Loupe de zoom sur le curseur ou le focus clavier",
+  "author": "Chêne Denis",
+  "homepage_url": "https://loupe-zoom.lovable.app",
   "permissions": ["activeTab", "<all_urls>", "storage"],
   "background": {
     "scripts": ["background.js"],
