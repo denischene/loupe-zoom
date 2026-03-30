@@ -314,11 +314,13 @@
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 
-    // If coming from focus mode, position cursor at center of focused element
+    // If coming from focus mode, show ring at center of focused element and move mouse there
     if (wasFocus && focusEl) {
       const rect = focusEl.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
+      mouseX = cx;
+      mouseY = cy;
       showCursorRing(cx, cy);
     }
 
