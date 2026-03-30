@@ -17,7 +17,7 @@
   let captureInFlight = false;
   let mouseMoveTimer = null;
   let slowCaptureInterval = null;
-  const SLOW_CAPTURE_MS = 2000;
+  const SLOW_CAPTURE_MS = 5000;
 
   // Focus tracking
   let focusTarget = null;
@@ -125,13 +125,13 @@
     if (captureInFlight || (state !== 'active_mouse' && state !== 'active_focus')) return;
     captureInFlight = true;
 
+    // Hide loupe so captureVisibleTab does NOT capture the loupe itself
     if (loupe) loupe.style.visibility = 'hidden';
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const p = browser.runtime.sendMessage({ type: 'capture' });
-        // Restore immediately — old image stays until new one loads
-        if (loupe) loupe.style.visibility = 'visible';
+        // Do NOT restore visibility here — wait for the new image
 
         p.then((dataUrl) => {
           captureInFlight = false;
@@ -139,14 +139,20 @@
             const img = new Image();
             img.onload = () => {
               currentImg = dataUrl;
+              if (loupe) loupe.style.visibility = 'visible';
               updateLoupe();
               if (cb) cb();
             };
-            img.onerror = () => {};
+            img.onerror = () => {
+              if (loupe) loupe.style.visibility = 'visible';
+            };
             img.src = dataUrl;
+          } else {
+            if (loupe) loupe.style.visibility = 'visible';
           }
         }).catch(() => {
           captureInFlight = false;
+          if (loupe) loupe.style.visibility = 'visible';
         });
       });
     });
@@ -357,6 +363,9 @@
     focusTarget = el;
     focusScrollOffset = 0;
     focusLoupeOverride = null;
+
+    // Scroll element into view if partially or fully off-screen
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
 
     const rect = el.getBoundingClientRect();
     focusX = rect.left + rect.width / 2;
