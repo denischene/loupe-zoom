@@ -394,7 +394,7 @@
       updateLoupe();
       startSlowCapture();
       if (rect.width > actualVisibleW) {
-        startFocusAutoScroll(rect, actualVisibleW);
+        setTimeout(() => { startFocusAutoScroll(rect, actualVisibleW); }, 1000);
       } else {
         startFocusInactivityTimer();
       }
