@@ -314,11 +314,13 @@
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 
-    // If coming from focus mode, position cursor at center of focused element
+    // If coming from focus mode, show ring at center of focused element and move mouse there
     if (wasFocus && focusEl) {
       const rect = focusEl.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
+      mouseX = cx;
+      mouseY = cy;
       showCursorRing(cx, cy);
     }
 
@@ -400,8 +402,6 @@
     el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
 
     const rect = el.getBoundingClientRect();
-    focusX = rect.left + rect.width / 2;
-    focusY = rect.top + rect.height / 2;
 
     const defaultStyle = getLoupeStyle(zoom, true);
     const elZoomedW = rect.width * zoom;
@@ -422,6 +422,10 @@
     const actualVisibleW = actualStyle.w / zoom;
     const actualVisibleH = actualStyle.h / zoom;
 
+    // Left-align: position so left edge of visible area = left edge of element
+    focusX = rect.left + actualVisibleW / 2;
+    focusY = rect.top + rect.height / 2;
+
     focusVerticalPart = 0;
     focusVerticalOffset = 0;
 
@@ -433,12 +437,43 @@
       const needsHScroll = rect.width > actualVisibleW;
       const needsVScroll = rect.height > actualVisibleH;
 
-      if (needsHScroll || needsVScroll) {
-        setTimeout(() => { startFocusMultiPartScroll(rect, actualVisibleW, actualVisibleH); }, 1000);
+      if (needsHScroll) {
+        if (needsVScroll) {
+          setTimeout(() => { startFocusMultiPartScroll(rect, actualVisibleW, actualVisibleH); }, 1000);
+        } else {
+          // Only horizontal scroll needed, no vertical
+          setTimeout(() => { startFocusHScrollOnly(rect, actualVisibleW); }, 1000);
+        }
       } else {
         startFocusInactivityTimer();
       }
     });
+  }
+
+  // Horizontal-only scroll: h-scroll → 2s pause → scroll back left → done
+  function startFocusHScrollOnly(rect, visibleWidth) {
+    if (state !== 'active_focus') return;
+    const maxHScroll = rect.width - visibleWidth;
+    focusScrollOffset = 0;
+    const scrollSpeed = 0.5;
+
+    function hStep() {
+      if (state !== 'active_focus') return;
+      focusScrollOffset += scrollSpeed;
+      if (focusScrollOffset >= maxHScroll) {
+        focusScrollOffset = maxHScroll;
+        updateLoupe();
+        setTimeout(() => {
+          scrollBackLeft(maxHScroll, () => {
+            startFocusInactivityTimer();
+          });
+        }, 2000);
+        return;
+      }
+      updateLoupe();
+      focusScrollRaf = requestAnimationFrame(hStep);
+    }
+    focusScrollRaf = requestAnimationFrame(hStep);
   }
 
   function startFocusMultiPartScroll(rect, visibleWidth, visibleHeight) {
