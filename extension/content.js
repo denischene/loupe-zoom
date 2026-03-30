@@ -17,7 +17,7 @@
   let captureInFlight = false;
   let mouseMoveTimer = null;
   let slowCaptureInterval = null;
-  const SLOW_CAPTURE_MS = 2000;
+  const SLOW_CAPTURE_MS = 5000;
 
   // Focus tracking
   let focusTarget = null;
