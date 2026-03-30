@@ -422,15 +422,8 @@
     const actualVisibleW = actualStyle.w / zoom;
     const actualVisibleH = actualStyle.h / zoom;
 
-    // Compute vertical parts
-    focusVerticalParts = Math.max(1, Math.ceil(rect.height / actualVisibleH));
     focusVerticalPart = 0;
     focusVerticalOffset = 0;
-
-    // For multi-part: center loupe on top of element for first part
-    if (focusVerticalParts > 1) {
-      focusY = rect.top + actualVisibleH / 2;
-    }
 
     stopSlowCapture();
     doCapture(() => {
@@ -438,9 +431,9 @@
       startSlowCapture();
 
       const needsHScroll = rect.width > actualVisibleW;
-      const needsVParts = focusVerticalParts > 1;
+      const needsVScroll = rect.height > actualVisibleH;
 
-      if (needsHScroll || needsVParts) {
+      if (needsHScroll || needsVScroll) {
         setTimeout(() => { startFocusMultiPartScroll(rect, actualVisibleW, actualVisibleH); }, 1000);
       } else {
         startFocusInactivityTimer();
