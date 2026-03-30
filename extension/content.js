@@ -140,8 +140,8 @@
     cursorRing.style.opacity = '1';
     setTimeout(() => {
       cursorRing.style.opacity = '0';
-      setTimeout(() => { cursorRing.style.display = 'none'; }, 400);
-    }, 600);
+      setTimeout(() => { cursorRing.style.display = 'none'; }, 600);
+    }, 1400);
   }
 
   // === CAPTURE (smart: on-demand + slow periodic) ===
