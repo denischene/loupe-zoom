@@ -3,8 +3,9 @@
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  border: 3px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.3), 0 8px 32px rgba(0,0,0,0.4);
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  outline: 3px solid rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.3), 0 8px 32px rgba(0,0,0,0.4);
   pointer-events: none;
   z-index: 2147483647;
   overflow: hidden;
@@ -40,6 +41,21 @@
   pointer-events: none;
   z-index: 2147483647;
   display: none;
+}
+
+/* Cursor ring animation (focus → pending transition) */
+#loupe-cursor-ring {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  outline: 3px solid #000;
+  pointer-events: none;
+  z-index: 2147483647;
+  transform: translate(-50%, -50%);
+  display: none;
+  transition: opacity 0.4s ease;
 }
 
 /* Active mode: hide cursor */

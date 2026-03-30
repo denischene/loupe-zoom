@@ -17,7 +17,7 @@
   let captureInFlight = false;
   let mouseMoveTimer = null;
   let slowCaptureInterval = null;
-  const SLOW_CAPTURE_MS = 5000;
+  const SLOW_CAPTURE_MS = 10000;
 
   // Focus tracking
   let focusTarget = null;
@@ -27,6 +27,13 @@
   let focusScrollRaf = null;
   let focusX = 0, focusY = 0;
   let focusLoupeOverride = null;
+  // Vertical multi-part scrolling
+  let focusVerticalPart = 0;
+  let focusVerticalParts = 1;
+  let focusVerticalOffset = 0;
+
+  // Cursor ring animation
+  let cursorRing = null;
 
   // === HELPERS ===
 
@@ -119,19 +126,35 @@
     if (pendingIndicator) pendingIndicator.style.display = 'none';
   }
 
+  // === CURSOR RING (shown when focus→pending, 1s animation) ===
+
+  function showCursorRing(x, y) {
+    if (!cursorRing) {
+      cursorRing = document.createElement('div');
+      cursorRing.id = 'loupe-cursor-ring';
+      document.body.appendChild(cursorRing);
+    }
+    cursorRing.style.left = x + 'px';
+    cursorRing.style.top = y + 'px';
+    cursorRing.style.display = 'block';
+    cursorRing.style.opacity = '1';
+    setTimeout(() => {
+      cursorRing.style.opacity = '0';
+      setTimeout(() => { cursorRing.style.display = 'none'; }, 400);
+    }, 600);
+  }
+
   // === CAPTURE (smart: on-demand + slow periodic) ===
 
   function doCapture(cb) {
     if (captureInFlight || (state !== 'active_mouse' && state !== 'active_focus')) return;
     captureInFlight = true;
 
-    // Hide loupe so captureVisibleTab does NOT capture the loupe itself
     if (loupe) loupe.style.visibility = 'hidden';
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const p = browser.runtime.sendMessage({ type: 'capture' });
-        // Do NOT restore visibility here — wait for the new image
 
         p.then((dataUrl) => {
           captureInFlight = false;
@@ -182,7 +205,6 @@
     const posX = isFocus ? focusX : mouseX;
     const posY = isFocus ? focusY : mouseY;
 
-    // Clamp to viewport bounds (always for focus, also for mouse)
     let loupeLeft = posX;
     let loupeTop = posY;
     if (isFocus) {
@@ -199,7 +221,7 @@
     const bgW = vpW * zoom;
     const bgH = vpH * zoom;
     const bgX = -posX * zoom + halfW - (isFocus ? focusScrollOffset * zoom : 0);
-    const bgY = -posY * zoom + halfH;
+    const bgY = -posY * zoom + halfH - (isFocus ? focusVerticalOffset * zoom : 0);
 
     loupe.style.backgroundImage = 'url(' + currentImg + ')';
     loupe.style.backgroundSize = bgW + 'px ' + bgH + 'px';
@@ -222,18 +244,13 @@
     mouseY = e.clientY;
 
     if (state === 'active_focus') {
-      // Mouse moved while in focus mode → switch to mouse mode
-      clearFocusTimers();
-      state = 'active_mouse';
-      focusLoupeOverride = null;
-      applyLoupeSize();
-      doCapture();
-      startSlowCapture();
+      // Mouse moved while in focus mode → switch to pending
+      enterPendingMode();
+      return;
     }
 
     if (state === 'active_mouse') {
       scheduleUpdate();
-      // Capture after mouse stops moving
       if (mouseMoveTimer) clearTimeout(mouseMoveTimer);
       mouseMoveTimer = setTimeout(() => { doCapture(); }, 200);
     }
@@ -264,7 +281,6 @@
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
     if (!currentImg) {
-      // First capture
       doCapture();
     }
     startSlowCapture();
@@ -273,6 +289,7 @@
   }
 
   function enterActiveFocusMode(el) {
+    // When entering focus mode, mouse-loupe goes pending conceptually
     state = 'active_focus';
     focusTarget = el || document.activeElement;
     createLoupe();
@@ -285,6 +302,8 @@
   }
 
   function enterPendingMode() {
+    const wasFocus = state === 'active_focus';
+    const focusEl = focusTarget;
     state = 'pending';
     clearFocusTimers();
     stopSlowCapture();
@@ -294,6 +313,14 @@
     if (loupe) loupe.style.display = 'none';
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    // If coming from focus mode, position cursor at center of focused element
+    if (wasFocus && focusEl) {
+      const rect = focusEl.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      showCursorRing(cx, cy);
+    }
 
     const focused = document.activeElement;
     if (focused && focused !== document.body && focused !== document) {
@@ -354,6 +381,9 @@
     if (focusInactivityTimer) { clearTimeout(focusInactivityTimer); focusInactivityTimer = null; }
     if (focusScrollRaf) { cancelAnimationFrame(focusScrollRaf); focusScrollRaf = null; }
     focusScrollOffset = 0;
+    focusVerticalOffset = 0;
+    focusVerticalPart = 0;
+    focusVerticalParts = 1;
     focusLoupeOverride = null;
   }
 
@@ -362,6 +392,8 @@
     clearFocusTimers();
     focusTarget = el;
     focusScrollOffset = 0;
+    focusVerticalOffset = 0;
+    focusVerticalPart = 0;
     focusLoupeOverride = null;
 
     // Scroll element into view if partially or fully off-screen
@@ -388,48 +420,154 @@
 
     const actualStyle = getLoupeStyle(zoom, true);
     const actualVisibleW = actualStyle.w / zoom;
+    const actualVisibleH = actualStyle.h / zoom;
+
+    // Compute vertical parts
+    focusVerticalParts = Math.max(1, Math.ceil(rect.height / actualVisibleH));
+    focusVerticalPart = 0;
+    focusVerticalOffset = 0;
+
+    // For multi-part: center loupe on top of element for first part
+    if (focusVerticalParts > 1) {
+      focusY = rect.top + actualVisibleH / 2;
+    }
 
     stopSlowCapture();
     doCapture(() => {
       updateLoupe();
       startSlowCapture();
-      if (rect.width > actualVisibleW) {
-        setTimeout(() => { startFocusAutoScroll(rect, actualVisibleW); }, 1000);
+
+      const needsHScroll = rect.width > actualVisibleW;
+      const needsVParts = focusVerticalParts > 1;
+
+      if (needsHScroll || needsVParts) {
+        setTimeout(() => { startFocusMultiPartScroll(rect, actualVisibleW, actualVisibleH); }, 1000);
       } else {
         startFocusInactivityTimer();
       }
     });
   }
 
-  function startFocusAutoScroll(rect, visibleWidth) {
-    const maxScroll = rect.width - visibleWidth;
-    const scrollSpeed = 0.5;
-    focusScrollOffset = 0;
-    focusScrollDirection = 1;
+  function startFocusMultiPartScroll(rect, visibleWidth, visibleHeight) {
+    if (state !== 'active_focus') return;
 
-    function scrollStep() {
-      focusScrollOffset += scrollSpeed * focusScrollDirection;
-      if (focusScrollOffset >= maxScroll) {
-        focusScrollOffset = maxScroll;
-        focusScrollDirection = 0;
-        updateLoupe();
-        startFocusInactivityTimer();
-        return;
-      }
+    const totalParts = focusVerticalParts;
+    let currentPart = 0;
+
+    function scrollPart() {
+      if (state !== 'active_focus') return;
+
+      // Set vertical offset for this part
+      focusVerticalPart = currentPart;
+      focusVerticalOffset = currentPart * visibleHeight;
+
+      // Update focusY to center on this vertical part
+      const partTop = rect.top + currentPart * visibleHeight;
+      focusY = partTop + visibleHeight / 2;
+
+      // Clamp focusY
+      const s = getLoupeStyle(zoom, true);
+      focusY = Math.max(s.h / 2, Math.min(window.innerHeight - s.h / 2, focusY));
+
+      applyLoupeSize();
       updateLoupe();
-      focusScrollRaf = requestAnimationFrame(scrollStep);
+
+      const needsHScroll = rect.width > visibleWidth;
+
+      if (needsHScroll) {
+        // Horizontal scroll for this part
+        const maxScroll = rect.width - visibleWidth;
+        focusScrollOffset = 0;
+        focusScrollDirection = 1;
+        const scrollSpeed = 0.5;
+
+        function hScrollStep() {
+          if (state !== 'active_focus') return;
+          focusScrollOffset += scrollSpeed * focusScrollDirection;
+          if (focusScrollOffset >= maxScroll) {
+            focusScrollOffset = maxScroll;
+            updateLoupe();
+            // After h-scroll ends, wait 2s then scroll back left over 2s
+            setTimeout(() => {
+              scrollBackLeft(maxScroll, () => {
+                // Move to next vertical part
+                currentPart++;
+                if (currentPart < totalParts) {
+                  // 1s pause before next part
+                  setTimeout(() => { scrollPart(); }, 1000);
+                } else {
+                  startFocusInactivityTimer();
+                }
+              });
+            }, 2000);
+            return;
+          }
+          updateLoupe();
+          focusScrollRaf = requestAnimationFrame(hScrollStep);
+        }
+        focusScrollRaf = requestAnimationFrame(hScrollStep);
+      } else {
+        // No h-scroll needed for this part, wait then next part
+        currentPart++;
+        if (currentPart < totalParts) {
+          setTimeout(() => { scrollPart(); }, 1000);
+        } else {
+          startFocusInactivityTimer();
+        }
+      }
     }
-    focusScrollRaf = requestAnimationFrame(scrollStep);
+
+    scrollPart();
+  }
+
+  function scrollBackLeft(maxScroll, cb) {
+    if (state !== 'active_focus') return;
+    // Scroll back from current offset to 0 over ~2s (at 60fps = ~120 frames)
+    const startOffset = focusScrollOffset;
+    const duration = 2000;
+    const startTime = performance.now();
+
+    function step(now) {
+      if (state !== 'active_focus') return;
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      focusScrollOffset = startOffset * (1 - progress);
+      updateLoupe();
+      if (progress < 1) {
+        focusScrollRaf = requestAnimationFrame(step);
+      } else {
+        focusScrollOffset = 0;
+        updateLoupe();
+        if (cb) cb();
+      }
+    }
+    focusScrollRaf = requestAnimationFrame(step);
   }
 
   function startFocusInactivityTimer() {
     if (focusInactivityTimer) clearTimeout(focusInactivityTimer);
+    // After scroll ends, wait 2s, scroll back left, then disappear
+    // For single-part elements without h-scroll, just wait 15s
     focusInactivityTimer = setTimeout(() => {
       if (state === 'active_focus') {
-        if (loupe) loupe.style.display = 'none';
-        clearFocusTimers();
+        // If there was a scroll offset, scroll back left first
+        if (focusScrollOffset > 0) {
+          scrollBackLeft(focusScrollOffset, () => {
+            setTimeout(() => {
+              if (state === 'active_focus') {
+                if (loupe) loupe.style.display = 'none';
+                clearFocusTimers();
+                // Stay in active_focus but hidden - next tab will re-show
+              }
+            }, 2000);
+          });
+        } else {
+          if (loupe) loupe.style.display = 'none';
+          clearFocusTimers();
+          // Stay in active_focus but hidden - next tab will re-show
+        }
       }
-    }, 5000);
+    }, 15000);
   }
 
   // === FOCUS CHANGE (Tab navigation) ===
@@ -441,7 +579,9 @@
       tag === 'SELECT' || tag === 'TEXTAREA' || el.hasAttribute('tabindex') ||
       el.hasAttribute('onclick') || el.getAttribute('role') === 'button' ||
       el.getAttribute('role') === 'link' || el.getAttribute('role') === 'checkbox' ||
-      el.getAttribute('role') === 'menuitem' || !!el.closest('a, button');
+      el.getAttribute('role') === 'menuitem' || !!el.closest('a, button') ||
+      tag === 'IMG' || tag === 'VIDEO' || tag === 'IFRAME' || tag === 'OBJECT' ||
+      tag === 'EMBED' || el.contentEditable === 'true';
   }
 
   function onFocusChange(e) {
@@ -463,6 +603,7 @@
 
     // Brief pause to show the unzoomed page with focus visible
     setTimeout(() => {
+      if (state === 'off') return;
       state = 'active_focus';
       focusLoupeOverride = null;
       startFocusOnElement(el);
@@ -497,8 +638,12 @@
       e.stopPropagation();
       e.stopImmediatePropagation();
       enterActiveMouseMode();
+      return;
     }
-    // In active_mouse: clicks pass through normally (activate element)
+    // In active modes: capture after click (content may have changed)
+    if (state === 'active_mouse' || state === 'active_focus') {
+      setTimeout(() => { doCapture(); }, 100);
+    }
   }, true);
 
   // === KEYBOARD ===
@@ -531,8 +676,10 @@
       return;
     }
 
-    // Enter in active_focus → normal behavior (activate element)
-    // Navigation will happen, beforeunload sets state to pending
+    // Enter in active modes → capture after activation
+    if (e.key === 'Enter' && (state === 'active_mouse' || state === 'active_focus')) {
+      setTimeout(() => { doCapture(); }, 100);
+    }
 
     // Zoom controls (+/- without modifiers)
     if (state === 'active_mouse' || state === 'active_focus') {
