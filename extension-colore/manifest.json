@@ -1,0 +1,43 @@
+{
+  "manifest_version": 2,
+  "name": "Colore Texte",
+  "version": "1.0.0",
+  "description": "Colore le texte en séparant les syllabes par un point médian",
+  "author": "Chêne Denis",
+  "homepage_url": "https://loupe-zoom.lovable.app",
+  "permissions": ["activeTab", "<all_urls>", "storage"],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_icon": {
+      "48": "icon.png",
+      "128": "icon.png"
+    },
+    "default_title": "Colore Texte"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "commands": {
+    "toggle-colore": {
+      "suggested_key": {
+        "default": "Ctrl+M"
+      },
+      "description": "Activer/désactiver Colore Texte"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["colore.css"]
+    }
+  ],
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
