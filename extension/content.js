@@ -471,7 +471,7 @@
           scrollBackLeft(maxHScroll, () => {
             if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
               // 3 passes done → pending
-              deactivate();
+              enterPendingMode();
               return;
             }
             // Wait 1s then restart scroll
