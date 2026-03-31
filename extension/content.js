@@ -493,15 +493,35 @@
   function startFocusMultiPartScroll(rect, visibleWidth, visibleHeight) {
     if (state !== 'active_focus') return;
 
-    // Calculate how many vertical "rows" we need (each row = 2 text lines tall in zoom space)
-    const lineHeight = 2 * 16; // ~2 lines at 16px each in page pixels
     const totalScrollHeight = rect.height - visibleHeight;
-    let currentVerticalOffset = 0;
+    // Build vertical offset steps:
+    // 1st pass: offset 0 (top)
+    // 2nd pass: offset visibleHeight/3
+    // 3rd pass: offset visibleHeight/2
+    // Then continue by thirds until bottom reached
+    let verticalSteps = [0];
+    if (totalScrollHeight > 0) {
+      const thirdStep = visibleHeight / 3;
+      verticalSteps.push(thirdStep);           // 2nd: 1/3
+      verticalSteps.push(visibleHeight / 2);   // 3rd: 1/2
+      // Continue by thirds from 1/2
+      let next = visibleHeight / 2 + thirdStep;
+      while (next < totalScrollHeight) {
+        verticalSteps.push(next);
+        next += thirdStep;
+      }
+      // Add final position if not already covered
+      if (verticalSteps[verticalSteps.length - 1] < totalScrollHeight) {
+        verticalSteps.push(totalScrollHeight);
+      }
+    }
+
+    let stepIndex = 0;
 
     function scrollRow() {
       if (state !== 'active_focus') return;
 
-      // Set vertical offset
+      let currentVerticalOffset = verticalSteps[stepIndex] || 0;
       focusVerticalOffset = currentVerticalOffset;
 
       // Update focusY based on current vertical offset
@@ -516,7 +536,6 @@
       const needsHScroll = rect.width > visibleWidth;
 
       if (needsHScroll) {
-        // Horizontal scroll for this row
         const maxHScroll = rect.width - visibleWidth;
         focusScrollOffset = 0;
         const scrollSpeed = 0.5;
@@ -527,7 +546,6 @@
           if (focusScrollOffset >= maxHScroll) {
             focusScrollOffset = maxHScroll;
             updateLoupe();
-            // Wait 2s then scroll back left over 2s
             setTimeout(() => {
               scrollBackLeft(maxHScroll, () => {
                 advanceVertical();
@@ -540,28 +558,26 @@
         }
         focusScrollRaf = requestAnimationFrame(hScrollStep);
       } else {
-        // No horizontal scroll needed, just advance vertically after a pause
         setTimeout(() => { advanceVertical(); }, 1000);
       }
     }
 
     function advanceVertical() {
       if (state !== 'active_focus') return;
-      currentVerticalOffset += lineHeight;
-      if (currentVerticalOffset <= totalScrollHeight && totalScrollHeight > 0) {
-        // 1s pause before next row
+      stepIndex++;
+      if (stepIndex < verticalSteps.length) {
         setTimeout(() => { scrollRow(); }, 1000);
       } else {
-        // Done with all rows for this pass
+        // Done with all steps for this pass
         focusScrollPassCount++;
         if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
           enterPendingMode();
           return;
         }
-        // Wait 1s then restart full multi-part scroll
+        // Restart from top
         setTimeout(() => {
           if (state === 'active_focus') {
-            currentVerticalOffset = 0;
+            stepIndex = 0;
             focusVerticalOffset = 0;
             focusScrollOffset = 0;
             scrollRow();
