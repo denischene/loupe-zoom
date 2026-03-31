@@ -552,8 +552,21 @@
         // 1s pause before next row
         setTimeout(() => { scrollRow(); }, 1000);
       } else {
-        // Done with all rows
-        startFocusInactivityTimer();
+        // Done with all rows for this pass
+        focusScrollPassCount++;
+        if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
+          enterPendingMode();
+          return;
+        }
+        // Wait 1s then restart full multi-part scroll
+        setTimeout(() => {
+          if (state === 'active_focus') {
+            currentVerticalOffset = 0;
+            focusVerticalOffset = 0;
+            focusScrollOffset = 0;
+            scrollRow();
+          }
+        }, 1000);
       }
     }
 
