@@ -31,6 +31,8 @@
   let focusVerticalPart = 0;
   let focusVerticalParts = 1;
   let focusVerticalOffset = 0;
+  let focusScrollPassCount = 0;
+  const MAX_SCROLL_PASSES = 3;
 
   // Cursor ring animation
   let cursorRing = null;
