@@ -389,6 +389,7 @@
     focusVerticalPart = 0;
     focusVerticalParts = 1;
     focusLoupeOverride = null;
+    focusScrollPassCount = 0;
   }
 
   function startFocusOnElement(el) {
