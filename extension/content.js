@@ -453,12 +453,13 @@
     });
   }
 
-  // Horizontal-only scroll: h-scroll → 2s pause → scroll back left → done
+  // Horizontal-only scroll: h-scroll → 2s pause → scroll back left → 1s pause → repeat (up to 3 passes)
   function startFocusHScrollOnly(rect, visibleWidth) {
     if (state !== 'active_focus') return;
     const maxHScroll = rect.width - visibleWidth;
     focusScrollOffset = 0;
     const scrollSpeed = 0.5;
+    focusScrollPassCount++;
 
     function hStep() {
       if (state !== 'active_focus') return;
@@ -468,7 +469,17 @@
         updateLoupe();
         setTimeout(() => {
           scrollBackLeft(maxHScroll, () => {
-            startFocusInactivityTimer();
+            if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
+              // 3 passes done → pending
+              deactivate();
+              return;
+            }
+            // Wait 1s then restart scroll
+            setTimeout(() => {
+              if (state === 'active_focus') {
+                startFocusHScrollOnly(rect, visibleWidth);
+              }
+            }, 1000);
           });
         }, 2000);
         return;
