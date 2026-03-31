@@ -31,6 +31,8 @@
   let focusVerticalPart = 0;
   let focusVerticalParts = 1;
   let focusVerticalOffset = 0;
+  let focusScrollPassCount = 0;
+  const MAX_SCROLL_PASSES = 3;
 
   // Cursor ring animation
   let cursorRing = null;
@@ -387,6 +389,7 @@
     focusVerticalPart = 0;
     focusVerticalParts = 1;
     focusLoupeOverride = null;
+    focusScrollPassCount = 0;
   }
 
   function startFocusOnElement(el) {
@@ -450,12 +453,13 @@
     });
   }
 
-  // Horizontal-only scroll: h-scroll → 2s pause → scroll back left → done
+  // Horizontal-only scroll: h-scroll → 2s pause → scroll back left → 1s pause → repeat (up to 3 passes)
   function startFocusHScrollOnly(rect, visibleWidth) {
     if (state !== 'active_focus') return;
     const maxHScroll = rect.width - visibleWidth;
     focusScrollOffset = 0;
     const scrollSpeed = 0.5;
+    focusScrollPassCount++;
 
     function hStep() {
       if (state !== 'active_focus') return;
@@ -465,7 +469,17 @@
         updateLoupe();
         setTimeout(() => {
           scrollBackLeft(maxHScroll, () => {
-            startFocusInactivityTimer();
+            if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
+              // 3 passes done → pending
+              enterPendingMode();
+              return;
+            }
+            // Wait 1s then restart scroll
+            setTimeout(() => {
+              if (state === 'active_focus') {
+                startFocusHScrollOnly(rect, visibleWidth);
+              }
+            }, 1000);
           });
         }, 2000);
         return;
@@ -538,8 +552,21 @@
         // 1s pause before next row
         setTimeout(() => { scrollRow(); }, 1000);
       } else {
-        // Done with all rows
-        startFocusInactivityTimer();
+        // Done with all rows for this pass
+        focusScrollPassCount++;
+        if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
+          enterPendingMode();
+          return;
+        }
+        // Wait 1s then restart full multi-part scroll
+        setTimeout(() => {
+          if (state === 'active_focus') {
+            currentVerticalOffset = 0;
+            focusVerticalOffset = 0;
+            focusScrollOffset = 0;
+            scrollRow();
+          }
+        }, 1000);
       }
     }
 
