@@ -494,23 +494,28 @@
     if (state !== 'active_focus') return;
 
     const totalScrollHeight = rect.height - visibleHeight;
-    // Build vertical offset steps:
-    // 1st pass: offset 0 (top)
-    // 2nd pass: offset visibleHeight/3
-    // 3rd pass: offset visibleHeight/2
-    // Then continue by thirds until bottom reached
+    // Vertical offset steps:
+    // 1st: 0 (initial zoomed image as-is)
+    // 2nd: 1/3 of view height
+    // 3rd: 2/3 of view height
+    // 4th: 3/3 (full view height)
+    // Then continue by 1/3 increments while at least 1/3 of content remains unseen
     let verticalSteps = [0];
     if (totalScrollHeight > 0) {
-      const thirdStep = visibleHeight / 3;
-      verticalSteps.push(thirdStep);           // 2nd: 1/3
-      verticalSteps.push(visibleHeight / 2);   // 3rd: 1/2
-      // Continue by thirds from 1/2
-      let next = visibleHeight / 2 + thirdStep;
-      while (next < totalScrollHeight) {
-        verticalSteps.push(next);
-        next += thirdStep;
+      const thirdH = visibleHeight / 3;
+      let offset = thirdH; // 1/3
+      while (offset < totalScrollHeight) {
+        verticalSteps.push(offset);
+        // Check if remaining content after this offset is less than 1/3
+        const remaining = totalScrollHeight - offset;
+        if (remaining < thirdH && offset + remaining <= totalScrollHeight) {
+          // Less than 1/3 remains beyond current step, add final and stop
+          verticalSteps.push(totalScrollHeight);
+          break;
+        }
+        offset += thirdH;
       }
-      // Add final position if not already covered
+      // Ensure final position is included if we exited the loop normally
       if (verticalSteps[verticalSteps.length - 1] < totalScrollHeight) {
         verticalSteps.push(totalScrollHeight);
       }
