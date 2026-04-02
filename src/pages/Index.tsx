@@ -144,7 +144,7 @@ const Index = () => {
         <section className="text-center space-y-4">
           <Button size="lg" onClick={handleDownload} className="gap-2">
             <Download className="w-4 h-4" />
-            Télécharger l'extension
+            Télécharger Loupe Zoom
           </Button>
           <div className="text-sm text-muted-foreground space-y-2 text-left bg-card rounded-xl border p-5 shadow-sm max-w-lg mx-auto">
             <p className="font-semibold text-foreground">Installation :</p>
