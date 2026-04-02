@@ -1,4 +1,4 @@
-import { Download, Accessibility, Languages, MousePointerClick } from "lucide-react";
+import { Download, Eye, MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
