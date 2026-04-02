@@ -44,11 +44,11 @@ const Index = () => {
         {/* Badges */}
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-border">
-            <Accessibility className="w-4 h-4 text-primary" />
+            <Eye className="w-4 h-4 text-primary" />
             Accessibilité
           </Badge>
           <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-border">
-            <Languages className="w-4 h-4 text-primary" />
+            <span className="text-base leading-none">🇫🇷</span>
             Français
           </Badge>
           <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-border">
