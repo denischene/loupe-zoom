@@ -1,4 +1,4 @@
-import { Download, Accessibility, Languages, MousePointerClick } from "lucide-react";
+import { Download, Eye, MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -44,11 +44,11 @@ const Index = () => {
         {/* Badges */}
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-border">
-            <Accessibility className="w-4 h-4 text-primary" />
+            <Eye className="w-4 h-4 text-primary" />
             Accessibilité
           </Badge>
           <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-border">
-            <Languages className="w-4 h-4 text-primary" />
+            <span className="text-base leading-none">🇫🇷</span>
             Français
           </Badge>
           <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm font-medium border-border">
@@ -144,7 +144,7 @@ const Index = () => {
         <section className="text-center space-y-4">
           <Button size="lg" onClick={handleDownload} className="gap-2">
             <Download className="w-4 h-4" />
-            Télécharger l'extension
+            Télécharger Loupe Zoom
           </Button>
           <div className="text-sm text-muted-foreground space-y-2 text-left bg-card rounded-xl border p-5 shadow-sm max-w-lg mx-auto">
             <p className="font-semibold text-foreground">Installation :</p>
