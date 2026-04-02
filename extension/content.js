@@ -494,7 +494,7 @@
     focusScrollPassCount++;
 
     function hStep() {
-      if (state !== 'active_focus') return;
+      if (state !== 'active_focus' || manualScrollMode) return;
       focusScrollOffset += scrollSpeed;
       if (focusScrollOffset >= maxHScroll) {
         focusScrollOffset = maxHScroll;
