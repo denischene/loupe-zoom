@@ -601,7 +601,7 @@
         const scrollSpeed = 0.5;
 
         function hScrollStep() {
-          if (state !== 'active_focus') return;
+          if (state !== 'active_focus' || manualScrollMode) return;
           focusScrollOffset += scrollSpeed;
           if (focusScrollOffset >= maxHScroll) {
             focusScrollOffset = maxHScroll;
