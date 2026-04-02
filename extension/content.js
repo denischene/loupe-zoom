@@ -34,6 +34,10 @@
   let focusScrollPassCount = 0;
   const MAX_SCROLL_PASSES = 3;
 
+  // Manual arrow-key scroll control
+  let manualScrollMode = false;
+  const ARROW_PAN_STEP = 20; // pixels per arrow press (in source coordinates)
+
   // Cursor ring animation
   let cursorRing = null;
 
@@ -390,6 +394,34 @@
     focusVerticalParts = 1;
     focusLoupeOverride = null;
     focusScrollPassCount = 0;
+    manualScrollMode = false;
+  }
+
+  // Arrow-key manual panning: interrupt auto-scroll and let user navigate
+  function enterManualScroll() {
+    if (manualScrollMode) return;
+    manualScrollMode = true;
+    // Stop any running auto-scroll animation
+    if (focusScrollRaf) { cancelAnimationFrame(focusScrollRaf); focusScrollRaf = null; }
+    // Reset inactivity timer — after 15s of no arrows, go pending
+    startFocusInactivityTimer();
+  }
+
+  function handleArrowPan(direction) {
+    if (state !== 'active_focus') return;
+    enterManualScroll();
+    // Reset inactivity on each arrow press
+    startFocusInactivityTimer();
+    switch (direction) {
+      case 'left':  focusScrollOffset -= ARROW_PAN_STEP; break;
+      case 'right': focusScrollOffset += ARROW_PAN_STEP; break;
+      case 'up':    focusVerticalOffset -= ARROW_PAN_STEP; break;
+      case 'down':  focusVerticalOffset += ARROW_PAN_STEP; break;
+    }
+    // Clamp to reasonable bounds
+    if (focusScrollOffset < 0) focusScrollOffset = 0;
+    if (focusVerticalOffset < 0) focusVerticalOffset = 0;
+    updateLoupe();
   }
 
   function startFocusOnElement(el) {
@@ -462,7 +494,7 @@
     focusScrollPassCount++;
 
     function hStep() {
-      if (state !== 'active_focus') return;
+      if (state !== 'active_focus' || manualScrollMode) return;
       focusScrollOffset += scrollSpeed;
       if (focusScrollOffset >= maxHScroll) {
         focusScrollOffset = maxHScroll;
@@ -490,6 +522,27 @@
     focusScrollRaf = requestAnimationFrame(hStep);
   }
 
+  // Detect if a vertical strip of the focused element is visually blank (no text/content)
+  function isBlankStrip(el, yOffsetInElement, stripHeight) {
+    // Heuristic: check if child elements overlap this vertical strip
+    const rect = el.getBoundingClientRect();
+    const stripTop = rect.top + yOffsetInElement;
+    const stripBottom = stripTop + stripHeight;
+
+    // Get all child elements and text nodes
+    const children = el.querySelectorAll('*');
+    for (let i = 0; i < children.length; i++) {
+      const cr = children[i].getBoundingClientRect();
+      // If any child overlaps this strip vertically, it's not blank
+      if (cr.bottom > stripTop && cr.top < stripBottom && cr.width > 0 && cr.height > 0) {
+        // Check if it has visible text content
+        const text = children[i].textContent || '';
+        if (text.trim().length > 0) return false;
+      }
+    }
+    return true;
+  }
+
   function startFocusMultiPartScroll(rect, visibleWidth, visibleHeight) {
     if (state !== 'active_focus') return;
 
@@ -505,17 +558,19 @@
       const thirdH = visibleHeight / 3;
       let offset = thirdH; // 1/3
       while (offset < totalScrollHeight) {
+        // Skip blank strips: if this offset region is blank, advance further
+        if (focusTarget && isBlankStrip(focusTarget, offset, thirdH / zoom)) {
+          offset += thirdH;
+          continue;
+        }
         verticalSteps.push(offset);
-        // Check if remaining content after this offset is less than 1/3
         const remaining = totalScrollHeight - offset;
         if (remaining < thirdH && offset + remaining <= totalScrollHeight) {
-          // Less than 1/3 remains beyond current step, add final and stop
           verticalSteps.push(totalScrollHeight);
           break;
         }
         offset += thirdH;
       }
-      // Ensure final position is included if we exited the loop normally
       if (verticalSteps[verticalSteps.length - 1] < totalScrollHeight) {
         verticalSteps.push(totalScrollHeight);
       }
@@ -546,7 +601,7 @@
         const scrollSpeed = 0.5;
 
         function hScrollStep() {
-          if (state !== 'active_focus') return;
+          if (state !== 'active_focus' || manualScrollMode) return;
           focusScrollOffset += scrollSpeed;
           if (focusScrollOffset >= maxHScroll) {
             focusScrollOffset = maxHScroll;
@@ -753,6 +808,14 @@
     // Enter in active modes → capture after activation
     if (e.key === 'Enter' && (state === 'active_mouse' || state === 'active_focus')) {
       setTimeout(() => { doCapture(); }, 100);
+    }
+
+    // Arrow keys in focus-loupe: interrupt auto-scroll, manual pan
+    if (state === 'active_focus') {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); handleArrowPan('left'); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); handleArrowPan('right'); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); handleArrowPan('up'); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); handleArrowPan('down'); return; }
     }
 
     // Zoom controls (+/- without modifiers)
