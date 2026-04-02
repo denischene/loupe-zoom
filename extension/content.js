@@ -34,6 +34,10 @@
   let focusScrollPassCount = 0;
   const MAX_SCROLL_PASSES = 3;
 
+  // Manual arrow-key scroll control
+  let manualScrollMode = false;
+  const ARROW_PAN_STEP = 20; // pixels per arrow press (in source coordinates)
+
   // Cursor ring animation
   let cursorRing = null;
 
