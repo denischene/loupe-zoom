@@ -59,15 +59,17 @@ const Index = () => {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 pb-20 space-y-16">
-        {/* Loupe illustration */}
-        <section className="relative bg-muted/40 rounded-2xl p-8 text-center">
-          <p className="text-2xl text-muted-foreground/40 font-serif mb-4">texte à lire</p>
+        {/* Loupe illustrations */}
+        <section className="flex flex-col md:flex-row items-center justify-center gap-8 bg-muted/40 rounded-2xl p-8">
           <img
-            src="/loupe-round.png"
-            alt="Loupe ronde grossissante"
-            width={200}
-            height={200}
-            className="mx-auto drop-shadow-lg"
+            src="/loupe-souris.png"
+            alt="Une loupe à utiliser à la souris"
+            className="max-w-[280px] w-full drop-shadow-lg rounded-lg"
+          />
+          <img
+            src="/loupe-clavier.png"
+            alt="Une loupe à utiliser au clavier"
+            className="max-w-[420px] w-full drop-shadow-lg rounded-lg"
           />
         </section>
 
