@@ -521,8 +521,6 @@
     }
     focusScrollRaf = requestAnimationFrame(hStep);
   }
-
-
   function startFocusMultiPartScroll(rect, visibleWidth, visibleHeight) {
     if (state !== 'active_focus') return;
 
@@ -538,10 +536,6 @@
       const thirdH = visibleHeight / 3;
       let offset = thirdH; // 1/3
       while (offset < totalScrollHeight) {
-        // Skip blank strips: if this offset region is blank, advance further
-        if (focusTarget && isBlankStrip(focusTarget, offset, thirdH / zoom)) {
-          offset += thirdH;
-          continue;
         }
         verticalSteps.push(offset);
         const remaining = totalScrollHeight - offset;
