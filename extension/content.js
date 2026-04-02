@@ -521,28 +521,6 @@
     }
     focusScrollRaf = requestAnimationFrame(hStep);
   }
-
-  // Detect if a vertical strip of the focused element is visually blank (no text/content)
-  function isBlankStrip(el, yOffsetInElement, stripHeight) {
-    // Heuristic: check if child elements overlap this vertical strip
-    const rect = el.getBoundingClientRect();
-    const stripTop = rect.top + yOffsetInElement;
-    const stripBottom = stripTop + stripHeight;
-
-    // Get all child elements and text nodes
-    const children = el.querySelectorAll('*');
-    for (let i = 0; i < children.length; i++) {
-      const cr = children[i].getBoundingClientRect();
-      // If any child overlaps this strip vertically, it's not blank
-      if (cr.bottom > stripTop && cr.top < stripBottom && cr.width > 0 && cr.height > 0) {
-        // Check if it has visible text content
-        const text = children[i].textContent || '';
-        if (text.trim().length > 0) return false;
-      }
-    }
-    return true;
-  }
-
   function startFocusMultiPartScroll(rect, visibleWidth, visibleHeight) {
     if (state !== 'active_focus') return;
 
@@ -558,10 +536,6 @@
       const thirdH = visibleHeight / 3;
       let offset = thirdH; // 1/3
       while (offset < totalScrollHeight) {
-        // Skip blank strips: if this offset region is blank, advance further
-        if (focusTarget && isBlankStrip(focusTarget, offset, thirdH / zoom)) {
-          offset += thirdH;
-          continue;
         }
         verticalSteps.push(offset);
         const remaining = totalScrollHeight - offset;
