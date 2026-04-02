@@ -394,6 +394,34 @@
     focusVerticalParts = 1;
     focusLoupeOverride = null;
     focusScrollPassCount = 0;
+    manualScrollMode = false;
+  }
+
+  // Arrow-key manual panning: interrupt auto-scroll and let user navigate
+  function enterManualScroll() {
+    if (manualScrollMode) return;
+    manualScrollMode = true;
+    // Stop any running auto-scroll animation
+    if (focusScrollRaf) { cancelAnimationFrame(focusScrollRaf); focusScrollRaf = null; }
+    // Reset inactivity timer — after 15s of no arrows, go pending
+    startFocusInactivityTimer();
+  }
+
+  function handleArrowPan(direction) {
+    if (state !== 'active_focus') return;
+    enterManualScroll();
+    // Reset inactivity on each arrow press
+    startFocusInactivityTimer();
+    switch (direction) {
+      case 'left':  focusScrollOffset -= ARROW_PAN_STEP; break;
+      case 'right': focusScrollOffset += ARROW_PAN_STEP; break;
+      case 'up':    focusVerticalOffset -= ARROW_PAN_STEP; break;
+      case 'down':  focusVerticalOffset += ARROW_PAN_STEP; break;
+    }
+    // Clamp to reasonable bounds
+    if (focusScrollOffset < 0) focusScrollOffset = 0;
+    if (focusVerticalOffset < 0) focusVerticalOffset = 0;
+    updateLoupe();
   }
 
   function startFocusOnElement(el) {
