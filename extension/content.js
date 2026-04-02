@@ -787,6 +787,14 @@
       setTimeout(() => { doCapture(); }, 100);
     }
 
+    // Arrow keys in focus-loupe: interrupt auto-scroll, manual pan
+    if (state === 'active_focus') {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); handleArrowPan('left'); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); handleArrowPan('right'); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); handleArrowPan('up'); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); handleArrowPan('down'); return; }
+    }
+
     // Zoom controls (+/- without modifiers)
     if (state === 'active_mouse' || state === 'active_focus') {
       if (!e.ctrlKey && !e.altKey && !e.metaKey) {
