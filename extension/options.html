@@ -88,13 +88,41 @@
       text-decoration: none;
     }
     .footer a:hover { text-decoration: underline; }
+    .zoom-section {
+      margin-top: 16px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .zoom-section h3 {
+      margin: 0 0 8px;
+    }
   </style>
 </head>
 <body>
   <h2>🔍 Loupe Zoom — Réglages</h2>
-  <label for="default-zoom">Zoom par défaut</label>
-  <select id="default-zoom"></select>
+
+  <div class="zoom-section">
+    <h3>🖱️ Loupe souris <small style="color:#888">(Facile+)</small></h3>
+    <label for="mouse-zoom">Zoom par défaut</label>
+    <select id="mouse-zoom"></select>
+  </div>
+
+  <div class="zoom-section">
+    <h3>⌨️ Focus-loupe <small style="color:#888">(Vision+)</small></h3>
+    <label for="focus-zoom">Zoom par défaut</label>
+    <select id="focus-zoom"></select>
+  </div>
+
+  <div class="zoom-section">
+    <h3>🔎 Agrandisseur <small style="color:#888">(Vision++)</small></h3>
+    <label for="magnifier-zoom">Zoom par défaut</label>
+    <select id="magnifier-zoom"></select>
+  </div>
+
   <div class="saved" id="saved-msg">✓ Enregistré</div>
+
   <div class="info">
     Pour modifier le raccourci clavier, allez dans<br>
     <strong>about:addons → ⚙️ → Gérer les raccourcis d'extension</strong>
@@ -103,12 +131,10 @@
   <div class="commands">
     <h3>⌨️ Mode Clavier</h3>
     <ol>
-      <li><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd> pour activer/désactiver l'extension loupe. Une fois activée, un petit logo apparaît alors au-dessus du focus.</li>
-      <li><kbd>Entrée</kbd> pour faire apparaître la loupe.</li>
-      <li>Si l'élément est activable (lien, bouton), un 2<sup>e</sup> <kbd>Entrée</kbd> le valide.</li>
-      <li><kbd>Tab</kbd> / <kbd>Maj.</kbd>+<kbd>Tab</kbd> pour naviguer entre les éléments.</li>
-      <li><kbd>+</kbd> et <kbd>-</kbd> permettent de changer le niveau de zoom.</li>
-      <li><kbd>Échap.</kbd> pour faire disparaître la loupe. <kbd>Entrée</kbd> permet de la faire réapparaître.</li>
+      <li><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd> pour activer/désactiver l'extension loupe. Une fois activée, un petit logo loupe apparaît alors au-dessus du focus.</li>
+      <li><kbd>Entrée</kbd> pour faire apparaître la loupe. Quand la loupe est lancée la touche <kbd>Entrée</kbd> sur un élément activable (hyperlien, bouton) valide l'élément.</li>
+      <li><kbd>Échap.</kbd> pour faire disparaître la loupe.</li>
+      <li><kbd>Tab</kbd> / <kbd>Maj.</kbd>+<kbd>Tab</kbd> pour déplacer le focus d'élément en élément.</li>
     </ol>
 
     <h3>🖱️ Mode Souris</h3>

@@ -15,11 +15,6 @@ browser.runtime.onMessage.addListener((msg, sender) => {
   return false;
 });
 
-// Toolbar button click toggles loupe
-browser.browserAction.onClicked.addListener((tab) => {
-  browser.tabs.sendMessage(tab.id, { type: 'toggle_loupe' }).catch(() => {});
-});
-
 // Keyboard command from Firefox shortcut management
 browser.commands.onCommand.addListener((command) => {
   if (command === 'toggle-loupe') {

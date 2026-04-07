@@ -1,6 +1,6 @@
 (() => {
   // === STATE MACHINE ===
-  // 'off' | 'pending' | 'active_mouse' | 'active_focus'
+  // 'off' | 'pending' | 'active_mouse' | 'active_focus' | 'active_magnifier'
   let state = 'off';
 
   let loupe = null;
@@ -11,9 +11,17 @@
   let zoomLabelTimeout = null;
   let currentImg = null;
 
+  // Separate zoom levels for each mode
+  let mouseZoom = 2;
+  let focusZoom = 5;
+  let magnifierZoom = 8;
+  // Active zoom used for rendering
   let zoom = 5;
-  const MIN_ZOOM = 2;
-  const MAX_ZOOM = 15;
+
+  const MOUSE_ZOOM_MIN = 2, MOUSE_ZOOM_MAX = 4;
+  const FOCUS_ZOOM_MIN = 2, FOCUS_ZOOM_MAX = 9;
+  const MAGNIFIER_ZOOM_MIN = 8, MAGNIFIER_ZOOM_MAX = 20;
+
   let captureInFlight = false;
   let mouseMoveTimer = null;
   let slowCaptureInterval = null;
@@ -27,7 +35,6 @@
   let focusScrollRaf = null;
   let focusX = 0, focusY = 0;
   let focusLoupeOverride = null;
-  // Vertical multi-part scrolling
   let focusVerticalPart = 0;
   let focusVerticalParts = 1;
   let focusVerticalOffset = 0;
@@ -36,22 +43,54 @@
 
   // Manual arrow-key scroll control
   let manualScrollMode = false;
-  const ARROW_PAN_STEP = 20; // pixels per arrow press (in source coordinates)
+  const ARROW_PAN_STEP = 20;
+
+  // Magnifier state
+  let magnifierPanX = 0, magnifierPanY = 0;
+  let magnifierLastElement = null;
 
   // Cursor ring animation
   let cursorRing = null;
 
   // === HELPERS ===
 
-  function getDefaultZoom() {
+  function loadZoomSettings() {
     try {
-      const v = parseInt(localStorage.getItem('__loupe_default_zoom'), 10);
-      if (v >= MIN_ZOOM && v <= MAX_ZOOM) return v;
+      const m = parseInt(localStorage.getItem('__loupe_mouse_zoom'), 10);
+      if (m >= MOUSE_ZOOM_MIN && m <= MOUSE_ZOOM_MAX) mouseZoom = m;
     } catch (e) {}
-    return 5;
+    try {
+      const f = parseInt(localStorage.getItem('__loupe_focus_zoom'), 10);
+      if (f >= FOCUS_ZOOM_MIN && f <= FOCUS_ZOOM_MAX) focusZoom = f;
+    } catch (e) {}
+    try {
+      const g = parseInt(localStorage.getItem('__loupe_magnifier_zoom'), 10);
+      if (g >= MAGNIFIER_ZOOM_MIN && g <= MAGNIFIER_ZOOM_MAX) magnifierZoom = g;
+    } catch (e) {}
+    // Also load from extension storage
+    try {
+      browser.storage.local.get(['mouseZoom', 'focusZoom', 'magnifierZoom']).then((data) => {
+        if (data.mouseZoom >= MOUSE_ZOOM_MIN && data.mouseZoom <= MOUSE_ZOOM_MAX) mouseZoom = data.mouseZoom;
+        if (data.focusZoom >= FOCUS_ZOOM_MIN && data.focusZoom <= FOCUS_ZOOM_MAX) focusZoom = data.focusZoom;
+        if (data.magnifierZoom >= MAGNIFIER_ZOOM_MIN && data.magnifierZoom <= MAGNIFIER_ZOOM_MAX) magnifierZoom = data.magnifierZoom;
+      });
+    } catch (e) {}
+  }
+
+  function getActiveZoom() {
+    if (state === 'active_mouse') return mouseZoom;
+    if (state === 'active_focus') return focusZoom;
+    if (state === 'active_magnifier') return magnifierZoom;
+    return focusZoom;
   }
 
   function getLoupeStyle(z, isFocus) {
+    if (state === 'active_magnifier') {
+      // Magnifier: large fixed window
+      const w = Math.min(window.innerWidth - 40, 1000);
+      const h = Math.min(window.innerHeight - 40, 700);
+      return { w, h, radius: '16px' };
+    }
     if (isFocus && focusLoupeOverride) {
       return { w: focusLoupeOverride.w, h: focusLoupeOverride.h, radius: '16px' };
     }
@@ -61,6 +100,7 @@
       if (z <= 12) return { w: 520, h: 320, radius: '16px' };
       return { w: 820, h: 400, radius: '16px' };
     }
+    // Mouse loupe: always round for ×2-×4
     if (z <= 4) return { w: 180, h: 180, radius: '50%' };
     if (z <= 9) return { w: 400, h: 260, radius: '16px' };
     if (z <= 12) return { w: 520, h: 320, radius: '16px' };
@@ -132,7 +172,7 @@
     if (pendingIndicator) pendingIndicator.style.display = 'none';
   }
 
-  // === CURSOR RING (shown when focus→pending, 1s animation) ===
+  // === CURSOR RING ===
 
   function showCursorRing(x, y) {
     if (!cursorRing) {
@@ -150,10 +190,10 @@
     }, 1400);
   }
 
-  // === CAPTURE (smart: on-demand + slow periodic) ===
+  // === CAPTURE ===
 
   function doCapture(cb) {
-    if (captureInFlight || (state !== 'active_mouse' && state !== 'active_focus')) return;
+    if (captureInFlight || (state !== 'active_mouse' && state !== 'active_focus' && state !== 'active_magnifier')) return;
     captureInFlight = true;
 
     if (loupe) loupe.style.visibility = 'hidden';
@@ -190,7 +230,7 @@
   function startSlowCapture() {
     stopSlowCapture();
     slowCaptureInterval = setInterval(() => {
-      if (state === 'active_mouse' || state === 'active_focus') doCapture();
+      if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier') doCapture();
     }, SLOW_CAPTURE_MS);
   }
 
@@ -201,12 +241,34 @@
   // === RENDER ===
 
   function updateLoupe() {
-    if ((state !== 'active_mouse' && state !== 'active_focus') || !loupe || !currentImg) return;
+    if ((state !== 'active_mouse' && state !== 'active_focus' && state !== 'active_magnifier') || !loupe || !currentImg) return;
 
     const isFocus = state === 'active_focus';
+    const isMagnifier = state === 'active_magnifier';
     const s = getLoupeStyle(zoom, isFocus);
     const halfW = s.w / 2;
     const halfH = s.h / 2;
+
+    if (isMagnifier) {
+      // Magnifier: centered on screen, panned by arrow keys
+      const loupeLeft = window.innerWidth / 2;
+      const loupeTop = window.innerHeight / 2;
+      loupe.style.left = loupeLeft + 'px';
+      loupe.style.top = loupeTop + 'px';
+      loupe.style.display = 'block';
+
+      const vpW = window.innerWidth;
+      const vpH = window.innerHeight;
+      const bgW = vpW * zoom;
+      const bgH = vpH * zoom;
+      const bgX = -magnifierPanX * zoom + halfW;
+      const bgY = -magnifierPanY * zoom + halfH;
+
+      loupe.style.backgroundImage = 'url(' + currentImg + ')';
+      loupe.style.backgroundSize = bgW + 'px ' + bgH + 'px';
+      loupe.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
+      return;
+    }
 
     const posX = isFocus ? focusX : mouseX;
     const posY = isFocus ? focusY : mouseY;
@@ -250,8 +312,12 @@
     mouseY = e.clientY;
 
     if (state === 'active_focus') {
-      // Mouse moved while in focus mode → switch to pending
       enterPendingMode();
+      return;
+    }
+
+    if (state === 'active_magnifier') {
+      // Mouse movement doesn't affect magnifier
       return;
     }
 
@@ -264,11 +330,21 @@
 
   function adjustZoom(delta) {
     if (state === 'off' || state === 'pending') return;
-    zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + delta));
+    let min, max;
+    if (state === 'active_mouse') { min = MOUSE_ZOOM_MIN; max = MOUSE_ZOOM_MAX; }
+    else if (state === 'active_focus') { min = FOCUS_ZOOM_MIN; max = FOCUS_ZOOM_MAX; }
+    else if (state === 'active_magnifier') { min = MAGNIFIER_ZOOM_MIN; max = MAGNIFIER_ZOOM_MAX; }
+    else return;
+
+    zoom = Math.max(min, Math.min(max, zoom + delta));
+
+    if (state === 'active_mouse') mouseZoom = zoom;
+    else if (state === 'active_focus') focusZoom = zoom;
+    else if (state === 'active_magnifier') magnifierZoom = zoom;
+
     applyLoupeSize();
     doCapture(() => { updateLoupe(); });
     showZoomIndicator();
-    try { sessionStorage.setItem('__loupe_zoom', String(zoom)); } catch (e) {}
   }
 
   // === STATE TRANSITIONS ===
@@ -281,6 +357,7 @@
 
   function enterActiveMouseMode() {
     state = 'active_mouse';
+    zoom = mouseZoom;
     createLoupe();
     applyLoupeSize();
     document.body.classList.remove('loupe-pending');
@@ -295,8 +372,8 @@
   }
 
   function enterActiveFocusMode(el) {
-    // When entering focus mode, mouse-loupe goes pending conceptually
     state = 'active_focus';
+    zoom = focusZoom;
     focusTarget = el || document.activeElement;
     createLoupe();
     document.body.classList.remove('loupe-pending');
@@ -307,9 +384,40 @@
     persistState();
   }
 
+  function enterMagnifierMode() {
+    state = 'active_magnifier';
+    zoom = magnifierZoom;
+    createLoupe();
+    applyLoupeSize();
+    document.body.classList.remove('loupe-pending');
+    document.body.classList.add('loupe-active');
+    hidePendingIndicator();
+
+    // Start centered on current focus or viewport center
+    const el = document.activeElement;
+    if (el && el !== document.body && el !== document) {
+      const rect = el.getBoundingClientRect();
+      magnifierPanX = rect.left + rect.width / 2;
+      magnifierPanY = rect.top + rect.height / 2;
+      magnifierLastElement = el;
+    } else {
+      magnifierPanX = window.innerWidth / 2;
+      magnifierPanY = window.innerHeight / 2;
+      magnifierLastElement = null;
+    }
+
+    doCapture(() => {
+      updateLoupe();
+    });
+    startSlowCapture();
+    notifyBackground(true);
+    persistState();
+  }
+
   function enterPendingMode() {
     const wasFocus = state === 'active_focus';
-    const focusEl = focusTarget;
+    const wasMagnifier = state === 'active_magnifier';
+    const focusEl = wasFocus ? focusTarget : null;
     state = 'pending';
     clearFocusTimers();
     stopSlowCapture();
@@ -320,7 +428,18 @@
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 
-    // If coming from focus mode, show ring at center of focused element and move mouse there
+    // If coming from magnifier, focus on last zoomed element
+    if (wasMagnifier && magnifierLastElement) {
+      try { magnifierLastElement.focus(); } catch (e) {}
+      const rect = magnifierLastElement.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      mouseX = cx;
+      mouseY = cy;
+      showCursorRing(cx, cy);
+    }
+
+    // If coming from focus mode, show ring at center of focused element
     if (wasFocus && focusEl) {
       const rect = focusEl.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
@@ -356,8 +475,9 @@
 
   function toggle() {
     if (state === 'off') {
-      zoom = getDefaultZoom();
-      enterActiveMouseMode();
+      loadZoomSettings();
+      // Start in pending mode (user then chooses how to interact)
+      enterPendingMode();
     } else {
       deactivate();
     }
@@ -376,8 +496,7 @@
     try {
       const saved = sessionStorage.getItem('__loupe_state');
       if (saved === 'pending') {
-        const savedZoom = parseInt(sessionStorage.getItem('__loupe_zoom'), 10);
-        if (savedZoom >= MIN_ZOOM && savedZoom <= MAX_ZOOM) zoom = savedZoom;
+        loadZoomSettings();
         enterPendingMode();
       }
     } catch (e) {}
@@ -397,31 +516,48 @@
     manualScrollMode = false;
   }
 
-  // Arrow-key manual panning: interrupt auto-scroll and let user navigate
   function enterManualScroll() {
     if (manualScrollMode) return;
     manualScrollMode = true;
-    // Stop any running auto-scroll animation
     if (focusScrollRaf) { cancelAnimationFrame(focusScrollRaf); focusScrollRaf = null; }
-    // Reset inactivity timer — after 15s of no arrows, go pending
     startFocusInactivityTimer();
   }
 
   function handleArrowPan(direction) {
-    if (state !== 'active_focus') return;
-    enterManualScroll();
-    // Reset inactivity on each arrow press
-    startFocusInactivityTimer();
-    switch (direction) {
-      case 'left':  focusScrollOffset -= ARROW_PAN_STEP; break;
-      case 'right': focusScrollOffset += ARROW_PAN_STEP; break;
-      case 'up':    focusVerticalOffset -= ARROW_PAN_STEP; break;
-      case 'down':  focusVerticalOffset += ARROW_PAN_STEP; break;
+    if (state === 'active_focus') {
+      enterManualScroll();
+      startFocusInactivityTimer();
+      switch (direction) {
+        case 'left':  focusScrollOffset -= ARROW_PAN_STEP; break;
+        case 'right': focusScrollOffset += ARROW_PAN_STEP; break;
+        case 'up':    focusVerticalOffset -= ARROW_PAN_STEP; break;
+        case 'down':  focusVerticalOffset += ARROW_PAN_STEP; break;
+      }
+      if (focusScrollOffset < 0) focusScrollOffset = 0;
+      if (focusVerticalOffset < 0) focusVerticalOffset = 0;
+      updateLoupe();
+    } else if (state === 'active_magnifier') {
+      // Pan magnifier view
+      const step = 30;
+      switch (direction) {
+        case 'left':  magnifierPanX -= step; break;
+        case 'right': magnifierPanX += step; break;
+        case 'up':    magnifierPanY -= step; break;
+        case 'down':  magnifierPanY += step; break;
+      }
+      // Clamp to page bounds
+      magnifierPanX = Math.max(0, Math.min(window.innerWidth, magnifierPanX));
+      magnifierPanY = Math.max(0, Math.min(window.innerHeight, magnifierPanY));
+
+      // Track what element is at this position for pending focus
+      const elAtPoint = document.elementFromPoint(magnifierPanX, magnifierPanY);
+      if (elAtPoint) magnifierLastElement = elAtPoint;
+
+      updateLoupe();
+      // Recapture periodically for magnifier panning
+      if (mouseMoveTimer) clearTimeout(mouseMoveTimer);
+      mouseMoveTimer = setTimeout(() => { doCapture(); }, 300);
     }
-    // Clamp to reasonable bounds
-    if (focusScrollOffset < 0) focusScrollOffset = 0;
-    if (focusVerticalOffset < 0) focusVerticalOffset = 0;
-    updateLoupe();
   }
 
   function startFocusOnElement(el) {
@@ -433,7 +569,6 @@
     focusVerticalPart = 0;
     focusLoupeOverride = null;
 
-    // Scroll element into view if partially or fully off-screen
     el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
 
     const rect = el.getBoundingClientRect();
@@ -457,7 +592,7 @@
     const actualVisibleW = actualStyle.w / zoom;
     const actualVisibleH = actualStyle.h / zoom;
 
-    // Left-align: position so left edge of visible area = left edge of element
+    // Left-align
     focusX = rect.left + actualVisibleW / 2;
     focusY = rect.top + rect.height / 2;
 
@@ -476,7 +611,6 @@
         if (needsVScroll) {
           setTimeout(() => { startFocusMultiPartScroll(rect, actualVisibleW, actualVisibleH); }, 1000);
         } else {
-          // Only horizontal scroll needed, no vertical
           setTimeout(() => { startFocusHScrollOnly(rect, actualVisibleW); }, 1000);
         }
       } else {
@@ -485,7 +619,6 @@
     });
   }
 
-  // Horizontal-only scroll: h-scroll → 2s pause → scroll back left → 1s pause → repeat (up to 3 passes)
   function startFocusHScrollOnly(rect, visibleWidth) {
     if (state !== 'active_focus') return;
     const maxHScroll = rect.width - visibleWidth;
@@ -502,11 +635,9 @@
         setTimeout(() => {
           scrollBackLeft(maxHScroll, () => {
             if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
-              // 3 passes done → pending
               enterPendingMode();
               return;
             }
-            // Wait 1s then restart scroll
             setTimeout(() => {
               if (state === 'active_focus') {
                 startFocusHScrollOnly(rect, visibleWidth);
@@ -521,22 +652,16 @@
     }
     focusScrollRaf = requestAnimationFrame(hStep);
   }
+
   function startFocusMultiPartScroll(rect, visibleWidth, visibleHeight) {
     if (state !== 'active_focus') return;
 
     const totalScrollHeight = rect.height - visibleHeight;
-    // Vertical offset steps:
-    // 1st: 0 (initial zoomed image as-is)
-    // 2nd: 1/3 of view height
-    // 3rd: 2/3 of view height
-    // 4th: 3/3 (full view height)
-    // Then continue by 1/3 increments while at least 1/3 of content remains unseen
     let verticalSteps = [0];
     if (totalScrollHeight > 0) {
       const thirdH = visibleHeight / 3;
-      let offset = thirdH; // 1/3
+      let offset = thirdH;
       while (offset < totalScrollHeight) {
-        }
         verticalSteps.push(offset);
         const remaining = totalScrollHeight - offset;
         if (remaining < thirdH && offset + remaining <= totalScrollHeight) {
@@ -558,7 +683,6 @@
       let currentVerticalOffset = verticalSteps[stepIndex] || 0;
       focusVerticalOffset = currentVerticalOffset;
 
-      // Update focusY based on current vertical offset
       const effectiveTop = rect.top - currentVerticalOffset;
       focusY = effectiveTop + visibleHeight / 2;
       const s = getLoupeStyle(zoom, true);
@@ -602,13 +726,11 @@
       if (stepIndex < verticalSteps.length) {
         setTimeout(() => { scrollRow(); }, 1000);
       } else {
-        // Done with all steps for this pass
         focusScrollPassCount++;
         if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
           enterPendingMode();
           return;
         }
-        // Restart from top
         setTimeout(() => {
           if (state === 'active_focus') {
             stepIndex = 0;
@@ -625,7 +747,6 @@
 
   function scrollBackLeft(maxScroll, cb) {
     if (state !== 'active_focus') return;
-    // Scroll back from current offset to 0 over ~2s (at 60fps = ~120 frames)
     const startOffset = focusScrollOffset;
     const duration = 2000;
     const startTime = performance.now();
@@ -649,31 +770,26 @@
 
   function startFocusInactivityTimer() {
     if (focusInactivityTimer) clearTimeout(focusInactivityTimer);
-    // After scroll ends, wait 2s, scroll back left, then disappear
-    // For single-part elements without h-scroll, just wait 15s
     focusInactivityTimer = setTimeout(() => {
       if (state === 'active_focus') {
-        // If there was a scroll offset, scroll back left first
         if (focusScrollOffset > 0) {
           scrollBackLeft(focusScrollOffset, () => {
             setTimeout(() => {
               if (state === 'active_focus') {
                 if (loupe) loupe.style.display = 'none';
                 clearFocusTimers();
-                // Stay in active_focus but hidden - next tab will re-show
               }
             }, 2000);
           });
         } else {
           if (loupe) loupe.style.display = 'none';
           clearFocusTimers();
-          // Stay in active_focus but hidden - next tab will re-show
         }
       }
     }, 15000);
   }
 
-  // === FOCUS CHANGE (Tab navigation) ===
+  // === FOCUS CHANGE ===
 
   function isActivatableElement(el) {
     if (!el || el === document || el === document.body) return false;
@@ -695,19 +811,21 @@
       return;
     }
 
+    // Magnifier ignores tab navigation
+    if (state === 'active_magnifier') return;
+
     if (state !== 'active_mouse' && state !== 'active_focus') return;
     if (!isActivatableElement(el)) return;
 
-    // Transition: hide loupe → show unzoomed page briefly → reappear on new element
     clearFocusTimers();
     stopSlowCapture();
     if (loupe) loupe.style.display = 'none';
     currentImg = null;
 
-    // Brief pause to show the unzoomed page with focus visible
     setTimeout(() => {
       if (state === 'off') return;
       state = 'active_focus';
+      zoom = focusZoom;
       focusLoupeOverride = null;
       startFocusOnElement(el);
     }, 350);
@@ -718,7 +836,7 @@
   // === RIGHT-CLICK → PENDING ===
 
   document.addEventListener('contextmenu', (e) => {
-    if (state === 'active_mouse' || state === 'active_focus') {
+    if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier') {
       e.preventDefault();
       enterPendingMode();
     }
@@ -743,7 +861,6 @@
       enterActiveMouseMode();
       return;
     }
-    // In active modes: capture after click (content may have changed)
     if (state === 'active_mouse' || state === 'active_focus') {
       setTimeout(() => { doCapture(); }, 100);
     }
@@ -752,16 +869,8 @@
   // === KEYBOARD ===
 
   document.addEventListener('keydown', (e) => {
-    // Ctrl+L toggle on/off
-    if (e.ctrlKey && e.key === 'l') {
-      e.preventDefault();
-      e.stopPropagation();
-      toggle();
-      return;
-    }
-
     // Escape: active → pending
-    if (e.key === 'Escape' && (state === 'active_focus' || state === 'active_mouse')) {
+    if (e.key === 'Escape' && (state === 'active_focus' || state === 'active_mouse' || state === 'active_magnifier')) {
       e.preventDefault();
       enterPendingMode();
       return;
@@ -784,8 +893,8 @@
       setTimeout(() => { doCapture(); }, 100);
     }
 
-    // Arrow keys in focus-loupe: interrupt auto-scroll, manual pan
-    if (state === 'active_focus') {
+    // Arrow keys: focus-loupe or magnifier panning
+    if (state === 'active_focus' || state === 'active_magnifier') {
       if (e.key === 'ArrowLeft') { e.preventDefault(); handleArrowPan('left'); return; }
       if (e.key === 'ArrowRight') { e.preventDefault(); handleArrowPan('right'); return; }
       if (e.key === 'ArrowUp') { e.preventDefault(); handleArrowPan('up'); return; }
@@ -793,7 +902,7 @@
     }
 
     // Zoom controls (+/- without modifiers)
-    if (state === 'active_mouse' || state === 'active_focus') {
+    if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier') {
       if (!e.ctrlKey && !e.altKey && !e.metaKey) {
         if (e.key === '+' || e.key === '=') {
           e.preventDefault();
@@ -808,7 +917,7 @@
 
   // Ctrl+wheel zoom
   document.addEventListener('wheel', (e) => {
-    if (state !== 'active_mouse' && state !== 'active_focus') return;
+    if (state !== 'active_mouse' && state !== 'active_focus' && state !== 'active_magnifier') return;
     if (!e.ctrlKey) return;
     e.preventDefault();
     adjustZoom(e.deltaY < 0 ? 1 : -1);
@@ -827,22 +936,57 @@
     }
   }, true);
 
-  // === MESSAGES FROM BACKGROUND ===
+  // === MESSAGES FROM BACKGROUND / POPUP ===
 
-  browser.runtime.onMessage.addListener((msg) => {
-    if (msg.type === 'toggle_loupe') toggle();
+  browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'toggle_loupe') {
+      toggle();
+      return;
+    }
     if (msg.type === 'start_pending') {
       if (state === 'off') {
-        zoom = getDefaultZoom();
+        loadZoomSettings();
         enterPendingMode();
       }
+      return;
+    }
+    if (msg.type === 'get_state') {
+      sendResponse({ state });
+      return;
+    }
+    if (msg.type === 'activate_magnifier') {
+      if (state === 'off') {
+        loadZoomSettings();
+      }
+      enterMagnifierMode();
+      return;
+    }
+    if (msg.type === 'update_zoom_setting') {
+      const val = msg.value;
+      if (msg.key === 'mouseZoom' && val >= MOUSE_ZOOM_MIN && val <= MOUSE_ZOOM_MAX) {
+        mouseZoom = val;
+        try { localStorage.setItem('__loupe_mouse_zoom', String(val)); } catch (e) {}
+        if (state === 'active_mouse') { zoom = mouseZoom; applyLoupeSize(); doCapture(); }
+      }
+      if (msg.key === 'focusZoom' && val >= FOCUS_ZOOM_MIN && val <= FOCUS_ZOOM_MAX) {
+        focusZoom = val;
+        try { localStorage.setItem('__loupe_focus_zoom', String(val)); } catch (e) {}
+        if (state === 'active_focus') { zoom = focusZoom; applyLoupeSize(); doCapture(); }
+      }
+      if (msg.key === 'magnifierZoom' && val >= MAGNIFIER_ZOOM_MIN && val <= MAGNIFIER_ZOOM_MAX) {
+        magnifierZoom = val;
+        try { localStorage.setItem('__loupe_magnifier_zoom', String(val)); } catch (e) {}
+        if (state === 'active_magnifier') { zoom = magnifierZoom; applyLoupeSize(); doCapture(); }
+      }
+      return;
     }
     if (msg.type === 'update_default_zoom') {
+      // Legacy support
       try { localStorage.setItem('__loupe_default_zoom', String(msg.zoom)); } catch (e) {}
     }
   });
 
-  // === BEFORE UNLOAD: persist pending for same-tab nav ===
+  // === BEFORE UNLOAD ===
 
   window.addEventListener('beforeunload', () => {
     if (state !== 'off') {
@@ -854,5 +998,6 @@
   });
 
   // === INIT ===
+  loadZoomSettings();
   restoreState();
 })();
