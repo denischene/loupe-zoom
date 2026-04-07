@@ -88,4 +88,14 @@
   magnifierSelect.addEventListener('change', () => {
     saveAndBroadcast('magnifierZoom', parseInt(magnifierSelect.value, 10));
   });
+
+  // Activate magnifier button
+  document.getElementById('activate-magnifier').addEventListener('click', () => {
+    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+      if (tabs[0]) {
+        browser.tabs.sendMessage(tabs[0].id, { type: 'activate_magnifier' }).catch(() => {});
+      }
+    });
+    window.close();
+  });
 })();
