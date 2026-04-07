@@ -336,7 +336,15 @@
     else if (state === 'active_magnifier') { min = MAGNIFIER_ZOOM_MIN; max = MAGNIFIER_ZOOM_MAX; }
     else return;
 
-    zoom = Math.max(min, Math.min(max, zoom + delta));
+    let newZoom = Math.max(min, Math.min(max, zoom + delta));
+
+    // If in focus mode and user tries to zoom beyond max, switch to magnifier
+    if (state === 'active_focus' && delta > 0 && zoom >= FOCUS_ZOOM_MAX) {
+      enterMagnifierMode();
+      return;
+    }
+
+    zoom = newZoom;
 
     if (state === 'active_mouse') mouseZoom = zoom;
     else if (state === 'active_focus') focusZoom = zoom;
