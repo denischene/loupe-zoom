@@ -27,23 +27,6 @@
       gap: 6px;
     }
     .header img { width: 22px; height: 22px; }
-    .toggle-btn {
-      padding: 4px 12px;
-      border-radius: 14px;
-      border: none;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s;
-    }
-    .toggle-btn.off {
-      background: #e0e0e0;
-      color: #666;
-    }
-    .toggle-btn.on {
-      background: #16a34a;
-      color: #fff;
-    }
     .section {
       margin-bottom: 10px;
       padding: 8px 10px;
@@ -85,6 +68,24 @@
       font-size: 12px;
       cursor: pointer;
     }
+    .activate-btn {
+      display: block;
+      width: 100%;
+      margin-top: 6px;
+      padding: 5px 0;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .activate-btn:hover { background: #1557b0; }
+    .activate-btn.deactivate {
+      background: #dc2626;
+    }
+    .activate-btn.deactivate:hover { background: #b91c1c; }
     .shortcut {
       margin-top: 10px;
       padding: 6px 10px;
@@ -102,25 +103,11 @@
       font-size: 10px;
       font-family: monospace;
     }
-    .activate-btn {
-      display: block;
-      width: 100%;
-      margin-top: 6px;
-      padding: 5px 0;
-      background: #1a73e8;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      font-size: 11px;
-      cursor: pointer;
-    }
-    .activate-btn:hover { background: #1557b0; }
   </style>
 </head>
 <body>
   <div class="header">
     <h2><img src="icon-both.png" alt=""> Loupe Zoom</h2>
-    <button class="toggle-btn off" id="toggle">Désactivé</button>
   </div>
 
   <div class="section">
@@ -132,6 +119,7 @@
       <label>Zoom</label>
       <select id="mouse-zoom"></select>
     </div>
+    <button class="activate-btn" id="activate-mouse">Activer la Loupe souris</button>
   </div>
 
   <div class="section">
@@ -143,6 +131,7 @@
       <label>Zoom</label>
       <select id="focus-zoom"></select>
     </div>
+    <button class="activate-btn" id="activate-focus">Activer le Focus-loupe</button>
   </div>
 
   <div class="section">
