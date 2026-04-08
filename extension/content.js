@@ -86,10 +86,8 @@
 
   function getLoupeStyle(z, isFocus) {
     if (state === 'active_magnifier') {
-      // Magnifier: large fixed window
-      const w = Math.min(window.innerWidth - 40, 1000);
-      const h = Math.min(window.innerHeight - 40, 700);
-      return { w, h, radius: '16px' };
+      // Magnifier: full window
+      return { w: window.innerWidth, h: window.innerHeight, radius: '0' };
     }
     if (isFocus && focusLoupeOverride) {
       return { w: focusLoupeOverride.w, h: focusLoupeOverride.h, radius: '16px' };
@@ -250,19 +248,17 @@
     const halfH = s.h / 2;
 
     if (isMagnifier) {
-      // Magnifier: centered on screen, panned by arrow keys
-      const loupeLeft = window.innerWidth / 2;
-      const loupeTop = window.innerHeight / 2;
-      loupe.style.left = loupeLeft + 'px';
-      loupe.style.top = loupeTop + 'px';
+      // Magnifier: full window, top-left anchored
+      loupe.style.left = (s.w / 2) + 'px';
+      loupe.style.top = (s.h / 2) + 'px';
       loupe.style.display = 'block';
 
       const vpW = window.innerWidth;
       const vpH = window.innerHeight;
       const bgW = vpW * zoom;
       const bgH = vpH * zoom;
-      const bgX = -magnifierPanX * zoom + halfW;
-      const bgY = -magnifierPanY * zoom + halfH;
+      const bgX = -magnifierPanX * zoom;
+      const bgY = -magnifierPanY * zoom;
 
       loupe.style.backgroundImage = 'url(' + currentImg + ')';
       loupe.style.backgroundSize = bgW + 'px ' + bgH + 'px';
@@ -401,18 +397,10 @@
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
 
-    // Start centered on current focus or viewport center
-    const el = document.activeElement;
-    if (el && el !== document.body && el !== document) {
-      const rect = el.getBoundingClientRect();
-      magnifierPanX = rect.left + rect.width / 2;
-      magnifierPanY = rect.top + rect.height / 2;
-      magnifierLastElement = el;
-    } else {
-      magnifierPanX = window.innerWidth / 2;
-      magnifierPanY = window.innerHeight / 2;
-      magnifierLastElement = null;
-    }
+    // Start at top-left of page
+    magnifierPanX = 0;
+    magnifierPanY = 0;
+    magnifierLastElement = document.activeElement || null;
 
     doCapture(() => {
       updateLoupe();
@@ -545,7 +533,7 @@
       if (focusVerticalOffset < 0) focusVerticalOffset = 0;
       updateLoupe();
     } else if (state === 'active_magnifier') {
-      // Pan magnifier view
+      // Pan magnifier view without recapture (no flickering)
       const step = 30;
       switch (direction) {
         case 'left':  magnifierPanX -= step; break;
@@ -558,13 +546,15 @@
       magnifierPanY = Math.max(0, Math.min(window.innerHeight, magnifierPanY));
 
       // Track what element is at this position for pending focus
-      const elAtPoint = document.elementFromPoint(magnifierPanX, magnifierPanY);
+      const centerX = window.innerWidth / (2 * zoom) + magnifierPanX;
+      const centerY = window.innerHeight / (2 * zoom) + magnifierPanY;
+      const elAtPoint = document.elementFromPoint(
+        Math.min(centerX, window.innerWidth - 1),
+        Math.min(centerY, window.innerHeight - 1)
+      );
       if (elAtPoint) magnifierLastElement = elAtPoint;
 
       updateLoupe();
-      // Recapture periodically for magnifier panning
-      if (mouseMoveTimer) clearTimeout(mouseMoveTimer);
-      mouseMoveTimer = setTimeout(() => { doCapture(); }, 300);
     }
   }
 
@@ -956,6 +946,25 @@
         loadZoomSettings();
         enterPendingMode();
       }
+      return;
+    }
+    if (msg.type === 'activate_mouse') {
+      if (state === 'off') loadZoomSettings();
+      enterActiveMouseMode();
+      return;
+    }
+    if (msg.type === 'activate_focus') {
+      if (state === 'off') loadZoomSettings();
+      const el = document.activeElement;
+      if (el && el !== document.body && el !== document) {
+        enterActiveFocusMode(el);
+      } else {
+        enterPendingMode();
+      }
+      return;
+    }
+    if (msg.type === 'deactivate') {
+      deactivate();
       return;
     }
     if (msg.type === 'get_state') {

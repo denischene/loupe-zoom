@@ -1,27 +1,24 @@
 (() => {
-  const toggleBtn = document.getElementById('toggle');
   const mouseSelect = document.getElementById('mouse-zoom');
   const focusSelect = document.getElementById('focus-zoom');
   const magnifierSelect = document.getElementById('magnifier-zoom');
+  const activateMouseBtn = document.getElementById('activate-mouse');
+  const activateFocusBtn = document.getElementById('activate-focus');
+  const activateMagnifierBtn = document.getElementById('activate-magnifier');
 
   // Populate selects
-  // Loupe souris: ×2 to ×4, default ×2
   for (let i = 2; i <= 4; i++) {
     const opt = document.createElement('option');
     opt.value = i;
     opt.textContent = '\u00d7' + i;
     mouseSelect.appendChild(opt);
   }
-
-  // Focus-loupe: ×2 to ×9, default ×5
   for (let i = 2; i <= 9; i++) {
     const opt = document.createElement('option');
     opt.value = i;
     opt.textContent = '\u00d7' + i;
     focusSelect.appendChild(opt);
   }
-
-  // Agrandisseur: ×8 to ×20, default ×8
   for (let i = 8; i <= 20; i++) {
     const opt = document.createElement('option');
     opt.value = i;
@@ -36,33 +33,89 @@
     magnifierSelect.value = data.magnifierZoom || 8;
   });
 
-  // Check current state from active tab
+  // Current active state tracking
+  let currentState = 'off';
+
+  function updateButtons(state) {
+    currentState = state;
+
+    // Mouse button
+    if (state === 'active_mouse') {
+      activateMouseBtn.textContent = 'Désactiver la Loupe souris';
+      activateMouseBtn.classList.add('deactivate');
+    } else {
+      activateMouseBtn.textContent = 'Activer la Loupe souris';
+      activateMouseBtn.classList.remove('deactivate');
+    }
+
+    // Focus button
+    if (state === 'active_focus') {
+      activateFocusBtn.textContent = 'Désactiver le Focus-loupe';
+      activateFocusBtn.classList.add('deactivate');
+    } else {
+      activateFocusBtn.textContent = 'Activer le Focus-loupe';
+      activateFocusBtn.classList.remove('deactivate');
+    }
+
+    // Magnifier button
+    if (state === 'active_magnifier') {
+      activateMagnifierBtn.textContent = "Désactiver l'Agrandisseur";
+      activateMagnifierBtn.classList.add('deactivate');
+    } else {
+      activateMagnifierBtn.textContent = "Activer l'Agrandisseur";
+      activateMagnifierBtn.classList.remove('deactivate');
+    }
+  }
+
+  // Check current state
   browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
     if (tabs[0]) {
       browser.tabs.sendMessage(tabs[0].id, { type: 'get_state' }).then((response) => {
-        if (response && response.state !== 'off') {
-          toggleBtn.textContent = 'Activé';
-          toggleBtn.className = 'toggle-btn on';
-        }
+        if (response) updateButtons(response.state);
       }).catch(() => {});
     }
   });
 
-  // Toggle
-  toggleBtn.addEventListener('click', () => {
+  function sendToActiveTab(msg) {
     browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       if (tabs[0]) {
-        browser.tabs.sendMessage(tabs[0].id, { type: 'toggle_loupe' }).catch(() => {});
+        browser.tabs.sendMessage(tabs[0].id, msg).catch(() => {});
       }
     });
-    // Toggle visual
-    if (toggleBtn.classList.contains('off')) {
-      toggleBtn.textContent = 'Activé';
-      toggleBtn.className = 'toggle-btn on';
+  }
+
+  // Activate buttons
+  activateMouseBtn.addEventListener('click', () => {
+    if (currentState === 'active_mouse') {
+      sendToActiveTab({ type: 'deactivate' });
+      updateButtons('off');
     } else {
-      toggleBtn.textContent = 'Désactivé';
-      toggleBtn.className = 'toggle-btn off';
+      sendToActiveTab({ type: 'activate_mouse' });
+      updateButtons('active_mouse');
     }
+    window.close();
+  });
+
+  activateFocusBtn.addEventListener('click', () => {
+    if (currentState === 'active_focus') {
+      sendToActiveTab({ type: 'deactivate' });
+      updateButtons('off');
+    } else {
+      sendToActiveTab({ type: 'activate_focus' });
+      updateButtons('active_focus');
+    }
+    window.close();
+  });
+
+  activateMagnifierBtn.addEventListener('click', () => {
+    if (currentState === 'active_magnifier') {
+      sendToActiveTab({ type: 'deactivate' });
+      updateButtons('off');
+    } else {
+      sendToActiveTab({ type: 'activate_magnifier' });
+      updateButtons('active_magnifier');
+    }
+    window.close();
   });
 
   // Save and broadcast zoom changes
@@ -80,22 +133,10 @@
   mouseSelect.addEventListener('change', () => {
     saveAndBroadcast('mouseZoom', parseInt(mouseSelect.value, 10));
   });
-
   focusSelect.addEventListener('change', () => {
     saveAndBroadcast('focusZoom', parseInt(focusSelect.value, 10));
   });
-
   magnifierSelect.addEventListener('change', () => {
     saveAndBroadcast('magnifierZoom', parseInt(magnifierSelect.value, 10));
-  });
-
-  // Activate magnifier button
-  document.getElementById('activate-magnifier').addEventListener('click', () => {
-    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-      if (tabs[0]) {
-        browser.tabs.sendMessage(tabs[0].id, { type: 'activate_magnifier' }).catch(() => {});
-      }
-    });
-    window.close();
   });
 })();
