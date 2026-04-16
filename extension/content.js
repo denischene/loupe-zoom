@@ -326,20 +326,64 @@
 
   function adjustZoom(delta) {
     if (state === 'off' || state === 'pending') return;
-    let min, max;
-    if (state === 'active_mouse') { min = MOUSE_ZOOM_MIN; max = MOUSE_ZOOM_MAX; }
-    else if (state === 'active_focus') { min = FOCUS_ZOOM_MIN; max = FOCUS_ZOOM_MAX; }
-    else if (state === 'active_magnifier') { min = MAGNIFIER_ZOOM_MIN; max = MAGNIFIER_ZOOM_MAX; }
-    else return;
 
-    let newZoom = Math.max(min, Math.min(max, zoom + delta));
+    const newZoom = zoom + delta;
+    if (newZoom < 2 || newZoom > 20) return;
 
-    // If in focus mode and user tries to zoom beyond max, switch to magnifier
-    if (state === 'active_focus' && delta > 0 && zoom >= FOCUS_ZOOM_MAX) {
-      enterMagnifierMode();
-      return;
+    // --- Upward transitions ---
+    if (delta > 0) {
+      if (state === 'active_mouse' && newZoom > MOUSE_ZOOM_MAX) {
+        // Mouse ×4 → Focus ×5: transition to focus-loupe
+        focusZoom = newZoom;
+        zoom = newZoom;
+        // Place focus near last mouse position
+        const elAtMouse = document.elementFromPoint(mouseX, mouseY);
+        enterActiveFocusMode(elAtMouse || document.activeElement);
+        showZoomIndicator();
+        return;
+      }
+      if (state === 'active_focus' && newZoom > FOCUS_ZOOM_MAX) {
+        // Focus ×9 → Magnifier ×10: transition to magnifier
+        magnifierZoom = newZoom;
+        zoom = newZoom;
+        // Place magnifier view near last focus/mouse position
+        magnifierPanX = Math.max(0, (state === 'active_focus' ? focusX : mouseX) - window.innerWidth / (2 * newZoom));
+        magnifierPanY = Math.max(0, (state === 'active_focus' ? focusY : mouseY) - window.innerHeight / (2 * newZoom));
+        enterMagnifierMode();
+        zoom = newZoom; // re-set after enterMagnifierMode resets it
+        magnifierZoom = newZoom;
+        applyLoupeSize();
+        updateLoupe();
+        showZoomIndicator();
+        return;
+      }
     }
 
+    // --- Downward transitions ---
+    if (delta < 0) {
+      if (state === 'active_magnifier' && newZoom < MAGNIFIER_ZOOM_MIN) {
+        // Magnifier → Focus-loupe (at ×7 or below)
+        focusZoom = newZoom;
+        zoom = newZoom;
+        // Focus near the center of what was visible in magnifier
+        const cx = magnifierPanX + window.innerWidth / (2 * (newZoom + 1));
+        const cy = magnifierPanY + window.innerHeight / (2 * (newZoom + 1));
+        const elAt = document.elementFromPoint(
+          Math.min(cx, window.innerWidth - 1),
+          Math.min(cy, window.innerHeight - 1)
+        );
+        enterActiveFocusMode(elAt || document.activeElement);
+        zoom = newZoom;
+        focusZoom = newZoom;
+        applyLoupeSize();
+        showZoomIndicator();
+        return;
+      }
+      // From focus-loupe going below ×5 does NOT switch to mouse loupe
+      // User must left-click to go back to mouse mode
+    }
+
+    // --- Same mode zoom ---
     zoom = newZoom;
 
     if (state === 'active_mouse') mouseZoom = zoom;
