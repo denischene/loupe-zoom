@@ -448,7 +448,8 @@
     // --- Downward transitions ---
     if (delta < 0) {
       if (state === 'active_magnifier' && newZoom < MAGNIFIER_ZOOM_MIN) {
-        // Magnifier → Focus-loupe (at ×7 or below)
+        // Magnifier → Focus-loupe (at ×7 or below): set browser zoom to 120%
+        setPageZoomPercent(120);
         focusZoom = newZoom;
         zoom = newZoom;
         // Focus near the center of what was visible in magnifier
@@ -464,6 +465,10 @@
         applyLoupeSize();
         showZoomIndicator();
         return;
+      }
+      // From focus-loupe reaching ×2: reset browser zoom to 100%
+      if (state === 'active_focus' && newZoom <= 2) {
+        setPageZoomPercent(100);
       }
       // From focus-loupe going below ×5 does NOT switch to mouse loupe
       // User must left-click to go back to mouse mode
