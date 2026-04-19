@@ -622,6 +622,7 @@
     if (manualScrollMode) return;
     manualScrollMode = true;
     if (focusScrollRaf) { cancelAnimationFrame(focusScrollRaf); focusScrollRaf = null; }
+    hideArrowHints();
     startFocusInactivityTimer();
   }
 
