@@ -44,6 +44,12 @@
   // Manual arrow-key scroll control
   let manualScrollMode = false;
   const ARROW_PAN_STEP = 20;
+  const ARROW_PAN_STEP_FINE = 5;
+  const MAGNIFIER_PAN_STEP = 30;
+  const MAGNIFIER_PAN_STEP_FINE = 8;
+
+  // Page-edge bumper indicators (top/bottom/left/right thick bars)
+  let pageEdgeBars = null;
 
   // Magnifier state
   let magnifierPanX = 0, magnifierPanY = 0;
