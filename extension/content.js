@@ -337,9 +337,25 @@
         // Mouse ×4 → Focus ×5: transition to focus-loupe
         focusZoom = newZoom;
         zoom = newZoom;
-        // Place focus near last mouse position
-        const elAtMouse = document.elementFromPoint(mouseX, mouseY);
-        enterActiveFocusMode(elAtMouse || document.activeElement);
+        // Find a focusable element near the mouse position
+        let elAtMouse = document.elementFromPoint(mouseX, mouseY);
+        let focusable = elAtMouse;
+        // Walk up to find an activatable / focusable ancestor
+        while (focusable && focusable !== document.body && !isActivatableElement(focusable)) {
+          focusable = focusable.parentElement;
+        }
+        if (!focusable || focusable === document.body) focusable = elAtMouse;
+        // Make non-focusable elements receive focus so Tab will resume from here
+        if (focusable && focusable !== document.body) {
+          try {
+            if (!focusable.hasAttribute('tabindex') &&
+                !['A','BUTTON','INPUT','SELECT','TEXTAREA'].includes(focusable.tagName)) {
+              focusable.setAttribute('tabindex', '-1');
+            }
+            focusable.focus({ preventScroll: true });
+          } catch (e) {}
+        }
+        enterActiveFocusMode(focusable || document.activeElement);
         showZoomIndicator();
         return;
       }
