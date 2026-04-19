@@ -711,12 +711,22 @@
       const needsHScroll = rect.width > actualVisibleW;
       const needsVScroll = rect.height > actualVisibleH;
 
+      // If vertical scrolling would be needed, do NOT scroll vertically.
+      // Align the top of the element to the top of the loupe view so the user
+      // can read the start of the content; vertical exploration will be done
+      // manually via arrow keys (hints shown after the horizontal demo).
+      if (needsVScroll) {
+        focusY = rect.top + actualVisibleH / 2;
+        updateLoupe();
+      }
+
       if (needsHScroll) {
-        if (needsVScroll) {
-          setTimeout(() => { startFocusMultiPartScroll(rect, actualVisibleW, actualVisibleH); }, 1000);
-        } else {
-          setTimeout(() => { startFocusHScrollOnly(rect, actualVisibleW); }, 1000);
-        }
+        // Both H-only and H+V cases: only animate horizontally.
+        setTimeout(() => { startFocusHScrollOnly(rect, actualVisibleW, needsVScroll); }, 1000);
+      } else if (needsVScroll) {
+        // Vertical needed but no horizontal: show arrow hints right away.
+        showArrowHints();
+        startFocusInactivityTimer();
       } else {
         startFocusInactivityTimer();
       }
