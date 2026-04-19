@@ -1079,6 +1079,15 @@
       return;
     }
 
+    // Enter in magnifier → activate the centered element
+    if (e.key === 'Enter' && state === 'active_magnifier') {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      activateMagnifierElement();
+      return;
+    }
+
     // Enter in active modes → capture after activation
     if (e.key === 'Enter' && (state === 'active_mouse' || state === 'active_focus')) {
       setTimeout(() => { doCapture(); }, 100);
