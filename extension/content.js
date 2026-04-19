@@ -238,14 +238,14 @@
     const rect = loupe.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const offset = 28;
+    // Position arrows directly on the borders (centers of each side)
     arrowHints.up.style.left = cx + 'px';
-    arrowHints.up.style.top = (rect.top - offset) + 'px';
+    arrowHints.up.style.top = rect.top + 'px';
     arrowHints.down.style.left = cx + 'px';
-    arrowHints.down.style.top = (rect.bottom + offset) + 'px';
-    arrowHints.left.style.left = (rect.left - offset) + 'px';
+    arrowHints.down.style.top = rect.bottom + 'px';
+    arrowHints.left.style.left = rect.left + 'px';
     arrowHints.left.style.top = cy + 'px';
-    arrowHints.right.style.left = (rect.right + offset) + 'px';
+    arrowHints.right.style.left = rect.right + 'px';
     arrowHints.right.style.top = cy + 'px';
     Object.values(arrowHints).forEach((el) => { el.style.display = 'block'; });
   }
