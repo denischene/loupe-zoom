@@ -79,3 +79,16 @@ body.loupe-pending *:focus {
   outline: 3px solid #0066ff !important;
   outline-offset: 2px !important;
 }
+
+/* Arrow hint indicators around the focus loupe */
+.loupe-arrow-hint {
+  position: fixed;
+  font: bold 28px/1 system-ui, sans-serif;
+  color: #fff;
+  text-shadow: 0 0 4px #000, 0 0 6px #000, 0 2px 6px rgba(0,0,0,0.9);
+  pointer-events: none;
+  z-index: 2147483647;
+  transform: translate(-50%, -50%);
+  display: none;
+  user-select: none;
+}

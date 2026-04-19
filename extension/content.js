@@ -52,6 +52,9 @@
   // Cursor ring animation
   let cursorRing = null;
 
+  // Arrow hint indicators (shown around focus-loupe when manual nav is needed)
+  let arrowHints = null;
+
   // === HELPERS ===
 
   function loadZoomSettings() {
@@ -188,6 +191,47 @@
     }, 1400);
   }
 
+  // === ARROW HINTS (shown around focus-loupe to suggest keyboard nav) ===
+
+  function ensureArrowHints() {
+    if (arrowHints) return arrowHints;
+    arrowHints = {};
+    const dirs = ['up', 'down', 'left', 'right'];
+    const glyphs = { up: '\u25B2', down: '\u25BC', left: '\u25C0', right: '\u25B6' };
+    dirs.forEach((d) => {
+      const el = document.createElement('div');
+      el.className = 'loupe-arrow-hint loupe-arrow-' + d;
+      el.textContent = glyphs[d];
+      el.style.display = 'none';
+      document.body.appendChild(el);
+      arrowHints[d] = el;
+    });
+    return arrowHints;
+  }
+
+  function showArrowHints() {
+    if (!loupe || state !== 'active_focus') return;
+    ensureArrowHints();
+    const rect = loupe.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const offset = 28;
+    arrowHints.up.style.left = cx + 'px';
+    arrowHints.up.style.top = (rect.top - offset) + 'px';
+    arrowHints.down.style.left = cx + 'px';
+    arrowHints.down.style.top = (rect.bottom + offset) + 'px';
+    arrowHints.left.style.left = (rect.left - offset) + 'px';
+    arrowHints.left.style.top = cy + 'px';
+    arrowHints.right.style.left = (rect.right + offset) + 'px';
+    arrowHints.right.style.top = cy + 'px';
+    Object.values(arrowHints).forEach((el) => { el.style.display = 'block'; });
+  }
+
+  function hideArrowHints() {
+    if (!arrowHints) return;
+    Object.values(arrowHints).forEach((el) => { el.style.display = 'none'; });
+  }
+
   // === CAPTURE ===
 
   function doCapture(cb) {
@@ -308,7 +352,8 @@
     mouseY = e.clientY;
 
     if (state === 'active_focus') {
-      enterPendingMode();
+      // Mouse movement alone keeps the user in focus-loupe (no pending switch).
+      // Only Escape or right-click switches to pending.
       return;
     }
 
@@ -336,9 +381,25 @@
         // Mouse ×4 → Focus ×5: transition to focus-loupe
         focusZoom = newZoom;
         zoom = newZoom;
-        // Place focus near last mouse position
-        const elAtMouse = document.elementFromPoint(mouseX, mouseY);
-        enterActiveFocusMode(elAtMouse || document.activeElement);
+        // Find a focusable element near the mouse position
+        let elAtMouse = document.elementFromPoint(mouseX, mouseY);
+        let focusable = elAtMouse;
+        // Walk up to find an activatable / focusable ancestor
+        while (focusable && focusable !== document.body && !isActivatableElement(focusable)) {
+          focusable = focusable.parentElement;
+        }
+        if (!focusable || focusable === document.body) focusable = elAtMouse;
+        // Make non-focusable elements receive focus so Tab will resume from here
+        if (focusable && focusable !== document.body) {
+          try {
+            if (!focusable.hasAttribute('tabindex') &&
+                !['A','BUTTON','INPUT','SELECT','TEXTAREA'].includes(focusable.tagName)) {
+              focusable.setAttribute('tabindex', '-1');
+            }
+            focusable.focus({ preventScroll: true });
+          } catch (e) {}
+        }
+        enterActiveFocusMode(focusable || document.activeElement);
         showZoomIndicator();
         return;
       }
@@ -554,12 +615,14 @@
     focusLoupeOverride = null;
     focusScrollPassCount = 0;
     manualScrollMode = false;
+    hideArrowHints();
   }
 
   function enterManualScroll() {
     if (manualScrollMode) return;
     manualScrollMode = true;
     if (focusScrollRaf) { cancelAnimationFrame(focusScrollRaf); focusScrollRaf = null; }
+    hideArrowHints();
     startFocusInactivityTimer();
   }
 
@@ -649,24 +712,37 @@
       const needsHScroll = rect.width > actualVisibleW;
       const needsVScroll = rect.height > actualVisibleH;
 
+      // If vertical scrolling would be needed, do NOT scroll vertically.
+      // Align the top of the element to the top of the loupe view so the user
+      // can read the start of the content; vertical exploration will be done
+      // manually via arrow keys (hints shown after the horizontal demo).
+      if (needsVScroll) {
+        focusY = rect.top + actualVisibleH / 2;
+        updateLoupe();
+      }
+
       if (needsHScroll) {
-        if (needsVScroll) {
-          setTimeout(() => { startFocusMultiPartScroll(rect, actualVisibleW, actualVisibleH); }, 1000);
-        } else {
-          setTimeout(() => { startFocusHScrollOnly(rect, actualVisibleW); }, 1000);
-        }
+        // Both H-only and H+V cases: only animate horizontally.
+        setTimeout(() => { startFocusHScrollOnly(rect, actualVisibleW, needsVScroll); }, 1000);
+      } else if (needsVScroll) {
+        // Vertical needed but no horizontal: show arrow hints right away.
+        showArrowHints();
+        startFocusInactivityTimer();
       } else {
         startFocusInactivityTimer();
       }
     });
   }
 
-  function startFocusHScrollOnly(rect, visibleWidth) {
+  function startFocusHScrollOnly(rect, visibleWidth, showHintsAfter) {
     if (state !== 'active_focus') return;
     const maxHScroll = rect.width - visibleWidth;
     focusScrollOffset = 0;
     const scrollSpeed = 0.5;
     focusScrollPassCount++;
+    // Stop after 2 passes; show arrow hints if needed (vertical scroll cases
+    // always show them, horizontal-only cases also show them as a guide).
+    const PASSES = 2;
 
     function hStep() {
       if (state !== 'active_focus' || manualScrollMode) return;
@@ -676,13 +752,16 @@
         updateLoupe();
         setTimeout(() => {
           scrollBackLeft(maxHScroll, () => {
-            if (focusScrollPassCount >= MAX_SCROLL_PASSES) {
-              enterPendingMode();
+            if (focusScrollPassCount >= PASSES) {
+              // After the 2nd horizontal pass returns to left, show arrow hints
+              // so the user knows they can pan with the keyboard.
+              if (showHintsAfter !== false) showArrowHints();
+              startFocusInactivityTimer();
               return;
             }
             setTimeout(() => {
               if (state === 'active_focus') {
-                startFocusHScrollOnly(rect, visibleWidth);
+                startFocusHScrollOnly(rect, visibleWidth, showHintsAfter);
               }
             }, 1000);
           });
