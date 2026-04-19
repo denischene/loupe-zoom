@@ -238,14 +238,14 @@
     const rect = loupe.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const offset = 28;
+    // Position arrows directly on the borders (centers of each side)
     arrowHints.up.style.left = cx + 'px';
-    arrowHints.up.style.top = (rect.top - offset) + 'px';
+    arrowHints.up.style.top = rect.top + 'px';
     arrowHints.down.style.left = cx + 'px';
-    arrowHints.down.style.top = (rect.bottom + offset) + 'px';
-    arrowHints.left.style.left = (rect.left - offset) + 'px';
+    arrowHints.down.style.top = rect.bottom + 'px';
+    arrowHints.left.style.left = rect.left + 'px';
     arrowHints.left.style.top = cy + 'px';
-    arrowHints.right.style.left = (rect.right + offset) + 'px';
+    arrowHints.right.style.left = rect.right + 'px';
     arrowHints.right.style.top = cy + 'px';
     Object.values(arrowHints).forEach((el) => { el.style.display = 'block'; });
   }
@@ -770,33 +770,25 @@
     const maxHScroll = rect.width - visibleWidth;
     focusScrollOffset = 0;
     const scrollSpeed = 0.5;
-    focusScrollPassCount++;
-    // Stop after 2 passes; show arrow hints if needed (vertical scroll cases
-    // always show them, horizontal-only cases also show them as a guide).
-    const PASSES = 2;
+
+    function finish() {
+      // Always show arrows after the single round-trip ends at the left edge
+      focusScrollOffset = 0;
+      updateLoupe();
+      showArrowHints();
+      startFocusInactivityTimer();
+    }
 
     function hStep() {
-      if (state !== 'active_focus' || manualScrollMode) return;
+      if (state !== 'active_focus' || manualScrollMode) { finish(); return; }
       focusScrollOffset += scrollSpeed;
       if (focusScrollOffset >= maxHScroll) {
         focusScrollOffset = maxHScroll;
         updateLoupe();
         setTimeout(() => {
-          scrollBackLeft(maxHScroll, () => {
-            if (focusScrollPassCount >= PASSES) {
-              // After the 2nd horizontal pass returns to left, show arrow hints
-              // so the user knows they can pan with the keyboard.
-              if (showHintsAfter !== false) showArrowHints();
-              startFocusInactivityTimer();
-              return;
-            }
-            setTimeout(() => {
-              if (state === 'active_focus') {
-                startFocusHScrollOnly(rect, visibleWidth, showHintsAfter);
-              }
-            }, 1000);
-          });
-        }, 2000);
+          if (state !== 'active_focus' || manualScrollMode) { finish(); return; }
+          scrollBackLeft(maxHScroll, () => { finish(); });
+        }, 1500);
         return;
       }
       updateLoupe();
@@ -1023,10 +1015,47 @@
       enterActiveMouseMode();
       return;
     }
+    // In magnifier mode, left-click activates the element under the visible center
+    if (state === 'active_magnifier') {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      activateMagnifierElement();
+      return;
+    }
     if (state === 'active_mouse' || state === 'active_focus') {
       setTimeout(() => { doCapture(); }, 100);
     }
   }, true);
+
+  // Block the underlying left mousedown in magnifier so the page does not
+  // receive an unintended click at the cursor location.
+  document.addEventListener('mousedown', (e) => {
+    if (e.button === 0 && state === 'active_magnifier') {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+
+  function activateMagnifierElement() {
+    // Page coordinate at the visible center of the magnifier viewport
+    const cx = magnifierPanX + window.innerWidth / (2 * zoom);
+    const cy = magnifierPanY + window.innerHeight / (2 * zoom);
+    const x = Math.max(0, Math.min(window.innerWidth - 1, cx));
+    const y = Math.max(0, Math.min(window.innerHeight - 1, cy));
+    // Temporarily hide the loupe so elementFromPoint sees the underlying page
+    const prevDisplay = loupe ? loupe.style.display : '';
+    if (loupe) loupe.style.display = 'none';
+    const el = document.elementFromPoint(x, y);
+    if (loupe) loupe.style.display = prevDisplay;
+    if (!el) return;
+    magnifierLastElement = el;
+    try { if (typeof el.focus === 'function') el.focus({ preventScroll: true }); } catch (err) {}
+    try { el.click(); } catch (err) {}
+    // Recapture after activation in case the page changed
+    setTimeout(() => { doCapture(); }, 150);
+  }
 
   // === KEYBOARD ===
 
@@ -1047,6 +1076,15 @@
       if (el && el !== document.body && el !== document) {
         enterActiveFocusMode(el);
       }
+      return;
+    }
+
+    // Enter in magnifier → activate the centered element
+    if (e.key === 'Enter' && state === 'active_magnifier') {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      activateMagnifierElement();
       return;
     }
 

@@ -80,12 +80,16 @@ body.loupe-pending *:focus {
   outline-offset: 2px !important;
 }
 
-/* Arrow hint indicators around the focus loupe */
+/* Arrow hint indicators on the borders of the focus loupe */
 .loupe-arrow-hint {
   position: fixed;
-  font: bold 28px/1 system-ui, sans-serif;
-  color: #fff;
-  text-shadow: 0 0 4px #000, 0 0 6px #000, 0 2px 6px rgba(0,0,0,0.9);
+  font: bold 32px/1 system-ui, sans-serif;
+  color: #000;
+  /* Thick white outline so arrows are visible on both white and black backgrounds */
+  text-shadow:
+    -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff,
+    -3px 0 0 #fff, 3px 0 0 #fff, 0 -3px 0 #fff, 0 3px 0 #fff,
+    -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff;
   pointer-events: none;
   z-index: 2147483647;
   transform: translate(-50%, -50%);
