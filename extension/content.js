@@ -530,6 +530,9 @@
   }
 
   function enterMagnifierMode() {
+    // Ensure focus-mode arrow hints are removed before building the magnifier view
+    hideArrowHints();
+    clearFocusTimers();
     state = 'active_magnifier';
     zoom = magnifierZoom;
     createLoupe();
