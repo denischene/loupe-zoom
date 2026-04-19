@@ -990,7 +990,16 @@
   document.addEventListener('contextmenu', (e) => {
     if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier') {
       e.preventDefault();
+      // Prevent any focusin triggered by the right-click from switching to focus mode
+      suppressFocusTransitionUntil = Date.now() + 600;
       enterPendingMode();
+    }
+  }, true);
+
+  // Also block focus moves caused by mousedown of the right button
+  document.addEventListener('mousedown', (e) => {
+    if (e.button === 2) {
+      suppressFocusTransitionUntil = Date.now() + 600;
     }
   }, true);
 
