@@ -52,6 +52,29 @@
   // Cursor ring animation
   let cursorRing = null;
 
+  // Suppress focusin-driven mode transitions briefly (e.g. after right-click)
+  let suppressFocusTransitionUntil = 0;
+
+  // Browser-level page zoom (applied via document.body.style.zoom)
+  function getCurrentPageZoomPercent() {
+    try {
+      const z = document.body && document.body.style && document.body.style.zoom;
+      if (!z) return 100;
+      if (typeof z === 'string' && z.endsWith('%')) return parseFloat(z) || 100;
+      const n = parseFloat(z);
+      return isNaN(n) ? 100 : n * 100;
+    } catch (e) { return 100; }
+  }
+  function setPageZoomPercent(percent) {
+    try {
+      if (!document.body) return;
+      document.body.style.zoom = (percent / 100).toString();
+    } catch (e) {}
+  }
+  function ensurePageZoomAtLeast(percent) {
+    if (getCurrentPageZoomPercent() < percent) setPageZoomPercent(percent);
+  }
+
   // Arrow hint indicators (shown around focus-loupe when manual nav is needed)
   let arrowHints = null;
 
@@ -378,7 +401,8 @@
     // --- Upward transitions ---
     if (delta > 0) {
       if (state === 'active_mouse' && newZoom > MOUSE_ZOOM_MAX) {
-        // Mouse ×4 → Focus ×5: transition to focus-loupe
+        // Mouse ×4 → Focus ×5: bump browser zoom to 120% (if lower)
+        ensurePageZoomAtLeast(120);
         focusZoom = newZoom;
         zoom = newZoom;
         // Find a focusable element near the mouse position
@@ -404,14 +428,15 @@
         return;
       }
       if (state === 'active_focus' && newZoom > FOCUS_ZOOM_MAX) {
-        // Focus ×9 → Magnifier ×10: transition to magnifier
+        // Focus ×9 → Magnifier ×10: bump browser zoom to 140% (if lower)
+        ensurePageZoomAtLeast(140);
         magnifierZoom = newZoom;
         zoom = newZoom;
         // Place magnifier view near last focus/mouse position
         magnifierPanX = Math.max(0, (state === 'active_focus' ? focusX : mouseX) - window.innerWidth / (2 * newZoom));
         magnifierPanY = Math.max(0, (state === 'active_focus' ? focusY : mouseY) - window.innerHeight / (2 * newZoom));
         enterMagnifierMode();
-        zoom = newZoom; // re-set after enterMagnifierMode resets it
+        zoom = newZoom;
         magnifierZoom = newZoom;
         applyLoupeSize();
         updateLoupe();
@@ -423,7 +448,8 @@
     // --- Downward transitions ---
     if (delta < 0) {
       if (state === 'active_magnifier' && newZoom < MAGNIFIER_ZOOM_MIN) {
-        // Magnifier → Focus-loupe (at ×7 or below)
+        // Magnifier → Focus-loupe (at ×7 or below): set browser zoom to 120%
+        setPageZoomPercent(120);
         focusZoom = newZoom;
         zoom = newZoom;
         // Focus near the center of what was visible in magnifier
@@ -439,6 +465,10 @@
         applyLoupeSize();
         showZoomIndicator();
         return;
+      }
+      // From focus-loupe reaching ×2: reset browser zoom to 100%
+      if (state === 'active_focus' && newZoom <= 2) {
+        setPageZoomPercent(100);
       }
       // From focus-loupe going below ×5 does NOT switch to mouse loupe
       // User must left-click to go back to mouse mode
@@ -569,6 +599,7 @@
     hidePendingIndicator();
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    setPageZoomPercent(100);
     notifyBackground(false);
     try { sessionStorage.removeItem('__loupe_state'); } catch (e) {}
     try { sessionStorage.removeItem('__loupe_zoom'); } catch (e) {}
@@ -936,6 +967,7 @@
     if (state === 'active_magnifier') return;
 
     if (state !== 'active_mouse' && state !== 'active_focus') return;
+    if (Date.now() < suppressFocusTransitionUntil) return;
     if (!isActivatableElement(el)) return;
 
     clearFocusTimers();
@@ -959,7 +991,16 @@
   document.addEventListener('contextmenu', (e) => {
     if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier') {
       e.preventDefault();
+      // Prevent any focusin triggered by the right-click from switching to focus mode
+      suppressFocusTransitionUntil = Date.now() + 600;
       enterPendingMode();
+    }
+  }, true);
+
+  // Also block focus moves caused by mousedown of the right button
+  document.addEventListener('mousedown', (e) => {
+    if (e.button === 2) {
+      suppressFocusTransitionUntil = Date.now() + 600;
     }
   }, true);
 
