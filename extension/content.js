@@ -1038,6 +1038,27 @@
     }
   }, true);
 
+  function findActivableAncestor(el) {
+    let cur = el;
+    let depth = 0;
+    while (cur && cur.nodeType === 1 && depth < 8) {
+      const tag = (cur.tagName || '').toLowerCase();
+      if (tag === 'a' && cur.href) return cur;
+      if (tag === 'button') return cur;
+      if (tag === 'input') {
+        const t = (cur.type || '').toLowerCase();
+        if (t === 'submit' || t === 'button' || t === 'reset' || t === 'checkbox' || t === 'radio' || t === 'image') return cur;
+      }
+      if (tag === 'select' || tag === 'textarea' || tag === 'summary' || tag === 'label') return cur;
+      const role = cur.getAttribute && cur.getAttribute('role');
+      if (role && ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'switch', 'option'].indexOf(role) !== -1) return cur;
+      if (cur.hasAttribute && cur.hasAttribute('onclick')) return cur;
+      cur = cur.parentElement;
+      depth++;
+    }
+    return null;
+  }
+
   function activateMagnifierElement() {
     // Page coordinate at the visible center of the magnifier viewport
     const cx = magnifierPanX + window.innerWidth / (2 * zoom);
@@ -1051,8 +1072,33 @@
     if (loupe) loupe.style.display = prevDisplay;
     if (!el) return;
     magnifierLastElement = el;
-    try { if (typeof el.focus === 'function') el.focus({ preventScroll: true }); } catch (err) {}
-    try { el.click(); } catch (err) {}
+    // Find the activable ancestor (link, button, etc.) so we trigger the real action
+    const target = findActivableAncestor(el) || el;
+    try { if (typeof target.focus === 'function') target.focus({ preventScroll: true }); } catch (err) {}
+    const tag = (target.tagName || '').toLowerCase();
+    try {
+      if (tag === 'a' && target.href) {
+        // Dispatch a click event first (lets handlers run / preventDefault)
+        const ev = new MouseEvent('click', { bubbles: true, cancelable: true, view: window, button: 0 });
+        const notCancelled = target.dispatchEvent(ev);
+        if (notCancelled) {
+          const targetAttr = target.getAttribute('target');
+          if (targetAttr && targetAttr !== '_self') {
+            window.open(target.href, targetAttr);
+          } else {
+            window.location.href = target.href;
+          }
+        }
+      } else {
+        // Buttons, inputs, etc.
+        if (typeof target.click === 'function') {
+          target.click();
+        } else {
+          const ev = new MouseEvent('click', { bubbles: true, cancelable: true, view: window, button: 0 });
+          target.dispatchEvent(ev);
+        }
+      }
+    } catch (err) {}
     // Recapture after activation in case the page changed
     setTimeout(() => { doCapture(); }, 150);
   }
@@ -1157,8 +1203,22 @@
     }
     if (msg.type === 'activate_focus') {
       if (state === 'off') loadZoomSettings();
-      const el = document.activeElement;
-      if (el && el !== document.body && el !== document) {
+      let el = document.activeElement;
+      if (!el || el === document.body || el === document || el === document.documentElement) {
+        // Simulate a Tab press: focus the first focusable element in the page
+        const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+        const candidates = Array.from(document.querySelectorAll(focusableSelector)).filter((node) => {
+          if (!(node instanceof HTMLElement)) return false;
+          if (node.offsetParent === null && node.tagName !== 'BODY') return false;
+          const rect = node.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0;
+        });
+        if (candidates.length > 0) {
+          try { candidates[0].focus({ preventScroll: false }); } catch (err) {}
+          el = document.activeElement;
+        }
+      }
+      if (el && el !== document.body && el !== document && el !== document.documentElement) {
         enterActiveFocusMode(el);
       } else {
         enterPendingMode();
