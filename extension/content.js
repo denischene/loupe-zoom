@@ -967,6 +967,7 @@
     if (state === 'active_magnifier') return;
 
     if (state !== 'active_mouse' && state !== 'active_focus') return;
+    if (Date.now() < suppressFocusTransitionUntil) return;
     if (!isActivatableElement(el)) return;
 
     clearFocusTimers();
