@@ -599,6 +599,7 @@
     hidePendingIndicator();
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    setPageZoomPercent(100);
     notifyBackground(false);
     try { sessionStorage.removeItem('__loupe_state'); } catch (e) {}
     try { sessionStorage.removeItem('__loupe_zoom'); } catch (e) {}
