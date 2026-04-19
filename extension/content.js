@@ -401,7 +401,8 @@
     // --- Upward transitions ---
     if (delta > 0) {
       if (state === 'active_mouse' && newZoom > MOUSE_ZOOM_MAX) {
-        // Mouse ×4 → Focus ×5: transition to focus-loupe
+        // Mouse ×4 → Focus ×5: bump browser zoom to 120% (if lower)
+        ensurePageZoomAtLeast(120);
         focusZoom = newZoom;
         zoom = newZoom;
         // Find a focusable element near the mouse position
