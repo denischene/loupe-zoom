@@ -1227,12 +1227,13 @@
       setTimeout(() => { doCapture(); }, 100);
     }
 
-    // Arrow keys: focus-loupe or magnifier panning
+    // Arrow keys: focus-loupe or magnifier panning (Ctrl = fine step)
     if (state === 'active_focus' || state === 'active_magnifier') {
-      if (e.key === 'ArrowLeft') { e.preventDefault(); handleArrowPan('left'); return; }
-      if (e.key === 'ArrowRight') { e.preventDefault(); handleArrowPan('right'); return; }
-      if (e.key === 'ArrowUp') { e.preventDefault(); handleArrowPan('up'); return; }
-      if (e.key === 'ArrowDown') { e.preventDefault(); handleArrowPan('down'); return; }
+      const fine = !!e.ctrlKey;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); handleArrowPan('left', fine); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); handleArrowPan('right', fine); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); handleArrowPan('up', fine); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); handleArrowPan('down', fine); return; }
     }
 
     // Zoom controls (+/- without modifiers)
