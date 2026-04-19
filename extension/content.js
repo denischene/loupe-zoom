@@ -770,33 +770,25 @@
     const maxHScroll = rect.width - visibleWidth;
     focusScrollOffset = 0;
     const scrollSpeed = 0.5;
-    focusScrollPassCount++;
-    // Stop after 2 passes; show arrow hints if needed (vertical scroll cases
-    // always show them, horizontal-only cases also show them as a guide).
-    const PASSES = 2;
+
+    function finish() {
+      // Always show arrows after the single round-trip ends at the left edge
+      focusScrollOffset = 0;
+      updateLoupe();
+      showArrowHints();
+      startFocusInactivityTimer();
+    }
 
     function hStep() {
-      if (state !== 'active_focus' || manualScrollMode) return;
+      if (state !== 'active_focus' || manualScrollMode) { finish(); return; }
       focusScrollOffset += scrollSpeed;
       if (focusScrollOffset >= maxHScroll) {
         focusScrollOffset = maxHScroll;
         updateLoupe();
         setTimeout(() => {
-          scrollBackLeft(maxHScroll, () => {
-            if (focusScrollPassCount >= PASSES) {
-              // After the 2nd horizontal pass returns to left, show arrow hints
-              // so the user knows they can pan with the keyboard.
-              if (showHintsAfter !== false) showArrowHints();
-              startFocusInactivityTimer();
-              return;
-            }
-            setTimeout(() => {
-              if (state === 'active_focus') {
-                startFocusHScrollOnly(rect, visibleWidth, showHintsAfter);
-              }
-            }, 1000);
-          });
-        }, 2000);
+          if (state !== 'active_focus' || manualScrollMode) { finish(); return; }
+          scrollBackLeft(maxHScroll, () => { finish(); });
+        }, 1500);
         return;
       }
       updateLoupe();
