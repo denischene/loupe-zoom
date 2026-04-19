@@ -52,6 +52,9 @@
   // Cursor ring animation
   let cursorRing = null;
 
+  // Arrow hint indicators (shown around focus-loupe when manual nav is needed)
+  let arrowHints = null;
+
   // === HELPERS ===
 
   function loadZoomSettings() {
