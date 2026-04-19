@@ -428,14 +428,15 @@
         return;
       }
       if (state === 'active_focus' && newZoom > FOCUS_ZOOM_MAX) {
-        // Focus ×9 → Magnifier ×10: transition to magnifier
+        // Focus ×9 → Magnifier ×10: bump browser zoom to 140% (if lower)
+        ensurePageZoomAtLeast(140);
         magnifierZoom = newZoom;
         zoom = newZoom;
         // Place magnifier view near last focus/mouse position
         magnifierPanX = Math.max(0, (state === 'active_focus' ? focusX : mouseX) - window.innerWidth / (2 * newZoom));
         magnifierPanY = Math.max(0, (state === 'active_focus' ? focusY : mouseY) - window.innerHeight / (2 * newZoom));
         enterMagnifierMode();
-        zoom = newZoom; // re-set after enterMagnifierMode resets it
+        zoom = newZoom;
         magnifierZoom = newZoom;
         applyLoupeSize();
         updateLoupe();
