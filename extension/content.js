@@ -1163,35 +1163,49 @@
     if (loupe) loupe.style.display = prevDisplay;
     if (!el) return;
     magnifierLastElement = el;
-    // Find the activable ancestor (link, button, etc.) so we trigger the real action
     const target = findActivableAncestor(el) || el;
     try { if (typeof target.focus === 'function') target.focus({ preventScroll: true }); } catch (err) {}
+
     const tag = (target.tagName || '').toLowerCase();
+    const eventInit = {
+      bubbles: true, cancelable: true, composed: true, view: window,
+      button: 0, buttons: 1, clientX: x, clientY: y
+    };
+
     try {
-      if (tag === 'a' && target.href) {
-        // Dispatch a click event first (lets handlers run / preventDefault)
-        const ev = new MouseEvent('click', { bubbles: true, cancelable: true, view: window, button: 0 });
-        const notCancelled = target.dispatchEvent(ev);
-        if (notCancelled) {
-          const targetAttr = target.getAttribute('target');
-          if (targetAttr && targetAttr !== '_self') {
-            window.open(target.href, targetAttr);
-          } else {
-            window.location.href = target.href;
-          }
-        }
+      // Full pointer/mouse sequence so frameworks (React, etc.) and native handlers fire
+      try { target.dispatchEvent(new PointerEvent('pointerdown', { ...eventInit, pointerId: 1, pointerType: 'mouse' })); } catch (e) {}
+      target.dispatchEvent(new MouseEvent('mousedown', eventInit));
+      try { target.dispatchEvent(new PointerEvent('pointerup', { ...eventInit, pointerId: 1, pointerType: 'mouse' })); } catch (e) {}
+      target.dispatchEvent(new MouseEvent('mouseup', eventInit));
+
+      // Use native .click() when available — it triggers the default action for
+      // buttons, inputs, and follows links for <a>.
+      if (typeof target.click === 'function') {
+        target.click();
       } else {
-        // Buttons, inputs, etc.
-        if (typeof target.click === 'function') {
-          target.click();
-        } else {
-          const ev = new MouseEvent('click', { bubbles: true, cancelable: true, view: window, button: 0 });
-          target.dispatchEvent(ev);
-        }
+        target.dispatchEvent(new MouseEvent('click', eventInit));
+      }
+
+      // Safety net for plain anchors that didn't navigate (e.g. handler swallowed click)
+      if (tag === 'a' && target.href) {
+        // Defer slightly so any SPA router has a chance to handle the click first
+        const hrefBefore = window.location.href;
+        setTimeout(() => {
+          if (window.location.href === hrefBefore) {
+            const targetAttr = target.getAttribute('target');
+            if (targetAttr && targetAttr !== '_self') {
+              window.open(target.href, targetAttr);
+            } else {
+              window.location.href = target.href;
+            }
+          }
+        }, 100);
       }
     } catch (err) {}
+
     // Recapture after activation in case the page changed
-    setTimeout(() => { doCapture(); }, 150);
+    setTimeout(() => { doCapture(); }, 200);
   }
 
   // === KEYBOARD ===
