@@ -191,6 +191,47 @@
     }, 1400);
   }
 
+  // === ARROW HINTS (shown around focus-loupe to suggest keyboard nav) ===
+
+  function ensureArrowHints() {
+    if (arrowHints) return arrowHints;
+    arrowHints = {};
+    const dirs = ['up', 'down', 'left', 'right'];
+    const glyphs = { up: '\u25B2', down: '\u25BC', left: '\u25C0', right: '\u25B6' };
+    dirs.forEach((d) => {
+      const el = document.createElement('div');
+      el.className = 'loupe-arrow-hint loupe-arrow-' + d;
+      el.textContent = glyphs[d];
+      el.style.display = 'none';
+      document.body.appendChild(el);
+      arrowHints[d] = el;
+    });
+    return arrowHints;
+  }
+
+  function showArrowHints() {
+    if (!loupe || state !== 'active_focus') return;
+    ensureArrowHints();
+    const rect = loupe.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const offset = 28;
+    arrowHints.up.style.left = cx + 'px';
+    arrowHints.up.style.top = (rect.top - offset) + 'px';
+    arrowHints.down.style.left = cx + 'px';
+    arrowHints.down.style.top = (rect.bottom + offset) + 'px';
+    arrowHints.left.style.left = (rect.left - offset) + 'px';
+    arrowHints.left.style.top = cy + 'px';
+    arrowHints.right.style.left = (rect.right + offset) + 'px';
+    arrowHints.right.style.top = cy + 'px';
+    Object.values(arrowHints).forEach((el) => { el.style.display = 'block'; });
+  }
+
+  function hideArrowHints() {
+    if (!arrowHints) return;
+    Object.values(arrowHints).forEach((el) => { el.style.display = 'none'; });
+  }
+
   // === CAPTURE ===
 
   function doCapture(cb) {
