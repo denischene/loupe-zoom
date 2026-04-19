@@ -52,6 +52,29 @@
   // Cursor ring animation
   let cursorRing = null;
 
+  // Suppress focusin-driven mode transitions briefly (e.g. after right-click)
+  let suppressFocusTransitionUntil = 0;
+
+  // Browser-level page zoom (applied via document.body.style.zoom)
+  function getCurrentPageZoomPercent() {
+    try {
+      const z = document.body && document.body.style && document.body.style.zoom;
+      if (!z) return 100;
+      if (typeof z === 'string' && z.endsWith('%')) return parseFloat(z) || 100;
+      const n = parseFloat(z);
+      return isNaN(n) ? 100 : n * 100;
+    } catch (e) { return 100; }
+  }
+  function setPageZoomPercent(percent) {
+    try {
+      if (!document.body) return;
+      document.body.style.zoom = (percent / 100).toString();
+    } catch (e) {}
+  }
+  function ensurePageZoomAtLeast(percent) {
+    if (getCurrentPageZoomPercent() < percent) setPageZoomPercent(percent);
+  }
+
   // Arrow hint indicators (shown around focus-loupe when manual nav is needed)
   let arrowHints = null;
 
