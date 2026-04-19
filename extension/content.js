@@ -308,7 +308,8 @@
     mouseY = e.clientY;
 
     if (state === 'active_focus') {
-      enterPendingMode();
+      // Mouse movement alone keeps the user in focus-loupe (no pending switch).
+      // Only Escape or right-click switches to pending.
       return;
     }
 
