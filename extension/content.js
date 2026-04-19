@@ -615,6 +615,7 @@
     focusLoupeOverride = null;
     focusScrollPassCount = 0;
     manualScrollMode = false;
+    hideArrowHints();
   }
 
   function enterManualScroll() {
