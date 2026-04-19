@@ -96,3 +96,18 @@ body.loupe-pending *:focus {
   display: none;
   user-select: none;
 }
+
+/* Page-edge bumper bars (shown briefly when magnifier hits the page edge) */
+.loupe-page-edge-bar {
+  position: fixed;
+  background: #ff3b30;
+  box-shadow: 0 0 12px rgba(255, 59, 48, 0.7), 0 0 0 2px rgba(255, 255, 255, 0.9) inset;
+  pointer-events: none;
+  z-index: 2147483647;
+  transition: opacity 0.4s ease;
+  opacity: 0;
+}
+.loupe-page-edge-top { top: 0; left: 0; right: 0; height: 14px; }
+.loupe-page-edge-bottom { bottom: 0; left: 0; right: 0; height: 14px; }
+.loupe-page-edge-left { top: 0; bottom: 0; left: 0; width: 14px; }
+.loupe-page-edge-right { top: 0; bottom: 0; right: 0; width: 14px; }
