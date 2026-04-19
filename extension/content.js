@@ -663,33 +663,75 @@
     startFocusInactivityTimer();
   }
 
-  function handleArrowPan(direction) {
+  function handleArrowPan(direction, fine) {
     if (state === 'active_focus') {
       enterManualScroll();
       startFocusInactivityTimer();
+      const step = fine ? ARROW_PAN_STEP_FINE : ARROW_PAN_STEP;
       switch (direction) {
-        case 'left':  focusScrollOffset -= ARROW_PAN_STEP; break;
-        case 'right': focusScrollOffset += ARROW_PAN_STEP; break;
-        case 'up':    focusVerticalOffset -= ARROW_PAN_STEP; break;
-        case 'down':  focusVerticalOffset += ARROW_PAN_STEP; break;
+        case 'left':  focusScrollOffset -= step; break;
+        case 'right': focusScrollOffset += step; break;
+        case 'up':    focusVerticalOffset -= step; break;
+        case 'down':  focusVerticalOffset += step; break;
       }
       if (focusScrollOffset < 0) focusScrollOffset = 0;
       if (focusVerticalOffset < 0) focusVerticalOffset = 0;
       updateLoupe();
     } else if (state === 'active_magnifier') {
-      // Pan magnifier view without recapture (no flickering)
-      const step = 30;
-      switch (direction) {
-        case 'left':  magnifierPanX -= step; break;
-        case 'right': magnifierPanX += step; break;
-        case 'up':    magnifierPanY -= step; break;
-        case 'down':  magnifierPanY += step; break;
-      }
-      // Clamp to page bounds
-      magnifierPanX = Math.max(0, Math.min(window.innerWidth, magnifierPanX));
-      magnifierPanY = Math.max(0, Math.min(window.innerHeight, magnifierPanY));
+      const step = fine ? MAGNIFIER_PAN_STEP_FINE : MAGNIFIER_PAN_STEP;
+      const viewW = window.innerWidth / zoom;
+      const viewH = window.innerHeight / zoom;
+      const maxPanX = Math.max(0, window.innerWidth - viewW);
+      const maxPanY = Math.max(0, window.innerHeight - viewH);
 
-      // Track what element is at this position for pending focus
+      let hitEdge = null;
+      switch (direction) {
+        case 'left':
+          if (magnifierPanX <= 0) {
+            const before = window.scrollX;
+            window.scrollBy({ left: -step * 4, behavior: 'auto' });
+            if (window.scrollX === before) hitEdge = 'left';
+            else { setTimeout(() => doCapture(), 50); }
+          } else {
+            magnifierPanX -= step;
+          }
+          break;
+        case 'right':
+          if (magnifierPanX >= maxPanX) {
+            const before = window.scrollX;
+            window.scrollBy({ left: step * 4, behavior: 'auto' });
+            if (window.scrollX === before) hitEdge = 'right';
+            else { setTimeout(() => doCapture(), 50); }
+          } else {
+            magnifierPanX += step;
+          }
+          break;
+        case 'up':
+          if (magnifierPanY <= 0) {
+            const before = window.scrollY;
+            window.scrollBy({ top: -step * 4, behavior: 'auto' });
+            if (window.scrollY === before) hitEdge = 'top';
+            else { setTimeout(() => doCapture(), 50); }
+          } else {
+            magnifierPanY -= step;
+          }
+          break;
+        case 'down':
+          if (magnifierPanY >= maxPanY) {
+            const before = window.scrollY;
+            window.scrollBy({ top: step * 4, behavior: 'auto' });
+            if (window.scrollY === before) hitEdge = 'bottom';
+            else { setTimeout(() => doCapture(), 50); }
+          } else {
+            magnifierPanY += step;
+          }
+          break;
+      }
+      magnifierPanX = Math.max(0, Math.min(maxPanX, magnifierPanX));
+      magnifierPanY = Math.max(0, Math.min(maxPanY, magnifierPanY));
+
+      if (hitEdge) showPageEdgeBar(hitEdge);
+
       const centerX = window.innerWidth / (2 * zoom) + magnifierPanX;
       const centerY = window.innerHeight / (2 * zoom) + magnifierPanY;
       const elAtPoint = document.elementFromPoint(
@@ -700,6 +742,46 @@
 
       updateLoupe();
     }
+  }
+
+  // === PAGE-EDGE BUMPER BARS ===
+
+  function isAtPageEdge(side) {
+    const doc = document.documentElement;
+    switch (side) {
+      case 'top':    return window.scrollY <= 0;
+      case 'bottom': return window.scrollY + window.innerHeight >= doc.scrollHeight - 1;
+      case 'left':   return window.scrollX <= 0;
+      case 'right':  return window.scrollX + window.innerWidth >= doc.scrollWidth - 1;
+    }
+    return false;
+  }
+
+  function ensurePageEdgeBars() {
+    if (pageEdgeBars) return pageEdgeBars;
+    pageEdgeBars = {};
+    ['top', 'bottom', 'left', 'right'].forEach((side) => {
+      const el = document.createElement('div');
+      el.className = 'loupe-page-edge-bar loupe-page-edge-' + side;
+      el.style.display = 'none';
+      document.body.appendChild(el);
+      pageEdgeBars[side] = el;
+    });
+    return pageEdgeBars;
+  }
+
+  function showPageEdgeBar(side) {
+    if (!isAtPageEdge(side)) return;
+    ensurePageEdgeBars();
+    const el = pageEdgeBars[side];
+    if (!el) return;
+    el.style.display = 'block';
+    el.style.opacity = '1';
+    if (el._hideTimer) clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => {
+      el.style.opacity = '0';
+      setTimeout(() => { el.style.display = 'none'; }, 400);
+    }, 700);
   }
 
   function startFocusOnElement(el) {
