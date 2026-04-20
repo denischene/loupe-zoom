@@ -48,6 +48,23 @@
       color: #888;
       font-weight: 400;
     }
+    .section-hint {
+      display: block;
+      font-size: 10px;
+      color: #555;
+      font-weight: 400;
+      margin-top: 2px;
+      font-style: italic;
+    }
+    .mode-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin-right: 2px;
+      vertical-align: -3px;
+    }
     .zoom-row {
       display: flex;
       align-items: center;
@@ -112,9 +129,10 @@
 
   <div class="section">
     <div class="section-title">
-      🖱️ Loupe souris
+      <span><span class="mode-icon">🔎</span>Loupe souris</span>
       <span class="section-subtitle">Facile+</span>
     </div>
+    <span class="section-hint">Ctrl+molette pour changer le zoom</span>
     <div class="zoom-row">
       <label>Zoom</label>
       <select id="mouse-zoom"></select>
@@ -124,9 +142,12 @@
 
   <div class="section">
     <div class="section-title">
-      ⌨️ Focus-loupe
+      <span><span class="mode-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M7 17h10"/></svg>
+      </span>Focus-loupe</span>
       <span class="section-subtitle">Vision+</span>
     </div>
+    <span class="section-hint">Tabulation pour avancer et +/− pour changer le zoom</span>
     <div class="zoom-row">
       <label>Zoom</label>
       <select id="focus-zoom"></select>
@@ -136,9 +157,12 @@
 
   <div class="section">
     <div class="section-title">
-      🔎 Agrandisseur
+      <span><span class="mode-icon" aria-hidden="true">
+        <svg width="20" height="16" viewBox="0 0 28 20" fill="none" stroke="#111" stroke-width="2"><rect x="1.5" y="1.5" width="25" height="17" rx="3.5"/><text x="14" y="15" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800" fill="#111" stroke="none">A</text></svg>
+      </span>Agrandisseur</span>
       <span class="section-subtitle">Vision++</span>
     </div>
+    <span class="section-hint">Flèches pour naviguer</span>
     <div class="zoom-row">
       <label>Zoom</label>
       <select id="magnifier-zoom"></select>
