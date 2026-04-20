@@ -677,6 +677,22 @@
     startFocusInactivityTimer();
   }
 
+  let edgeScrollCaptureTimer = null;
+  function scheduleEdgeScrollCapture() {
+    if (edgeScrollCaptureTimer) clearTimeout(edgeScrollCaptureTimer);
+    // Wait briefly for scroll to settle, then capture. If a capture is already
+    // in flight, retry shortly after to guarantee a refresh within ~1s.
+    const attempt = (tries) => {
+      if (state !== 'active_magnifier') return;
+      if (!captureInFlight) {
+        doCapture();
+      } else if (tries > 0) {
+        edgeScrollCaptureTimer = setTimeout(() => attempt(tries - 1), 200);
+      }
+    };
+    edgeScrollCaptureTimer = setTimeout(() => attempt(5), 150);
+  }
+
   function handleArrowPan(direction, fine) {
     if (state === 'active_focus') {
       enterManualScroll();
