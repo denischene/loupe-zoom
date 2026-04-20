@@ -1329,6 +1329,29 @@
     }
   }, true);
 
+  // === GLOBAL KEYBOARD SHORTCUT (fallback for Ctrl+Shift+Z) ===
+  // Firefox réserve souvent Ctrl+Shift+Z pour "Rétablir" → on capte la combinaison
+  // directement dans la page (en phase capture) pour garantir le toggle.
+  function isEditableTarget(el) {
+    if (!el) return false;
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+    if (el.isContentEditable) return true;
+    return false;
+  }
+
+  window.addEventListener('keydown', (e) => {
+    // Ctrl+Shift+Z (ou Cmd+Shift+Z) — éviter les champs éditables pour ne pas
+    // casser le "Redo" natif de l'utilisateur en saisie.
+    const isToggleCombo =
+      (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'Z' || e.key === 'z' || e.code === 'KeyZ');
+    if (!isToggleCombo) return;
+    if (isEditableTarget(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    try { toggle(); } catch (err) {}
+  }, true);
+
   // === MESSAGES FROM BACKGROUND / POPUP ===
 
   browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
