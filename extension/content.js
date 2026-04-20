@@ -700,11 +700,15 @@
       const maxPanY = Math.max(0, window.innerHeight - viewH);
 
       let hitEdge = null;
+      // When the magnifier view reaches the window edge, each additional arrow
+      // press scrolls the page by the SAME small "step" amount, so movement
+      // stays smooth and progressive (no large jump). After scrolling, the
+      // pan offset stays at the edge so the view keeps tracking the new page area.
       switch (direction) {
         case 'left':
           if (magnifierPanX <= 0) {
             const before = window.scrollX;
-            window.scrollBy({ left: -step * 4, behavior: 'auto' });
+            window.scrollBy({ left: -step, behavior: 'auto' });
             if (window.scrollX === before) hitEdge = 'left';
             else { setTimeout(() => doCapture(), 50); }
           } else {
@@ -714,7 +718,7 @@
         case 'right':
           if (magnifierPanX >= maxPanX) {
             const before = window.scrollX;
-            window.scrollBy({ left: step * 4, behavior: 'auto' });
+            window.scrollBy({ left: step, behavior: 'auto' });
             if (window.scrollX === before) hitEdge = 'right';
             else { setTimeout(() => doCapture(), 50); }
           } else {
@@ -724,7 +728,7 @@
         case 'up':
           if (magnifierPanY <= 0) {
             const before = window.scrollY;
-            window.scrollBy({ top: -step * 4, behavior: 'auto' });
+            window.scrollBy({ top: -step, behavior: 'auto' });
             if (window.scrollY === before) hitEdge = 'top';
             else { setTimeout(() => doCapture(), 50); }
           } else {
@@ -734,7 +738,7 @@
         case 'down':
           if (magnifierPanY >= maxPanY) {
             const before = window.scrollY;
-            window.scrollBy({ top: step * 4, behavior: 'auto' });
+            window.scrollBy({ top: step, behavior: 'auto' });
             if (window.scrollY === before) hitEdge = 'bottom';
             else { setTimeout(() => doCapture(), 50); }
           } else {
