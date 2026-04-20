@@ -598,7 +598,13 @@
     persistState();
   }
 
+  let lastUsedMode = null;
+
   function deactivate() {
+    if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier' || state === 'pending') {
+      lastUsedMode = state;
+      try { sessionStorage.setItem('__loupe_last_mode', state); } catch (e) {}
+    }
     state = 'off';
     clearFocusTimers();
     stopSlowCapture();
@@ -617,8 +623,14 @@
   function toggle() {
     if (state === 'off') {
       loadZoomSettings();
-      // Start in pending mode (user then chooses how to interact)
-      enterPendingMode();
+      let mode = lastUsedMode;
+      if (!mode) {
+        try { mode = sessionStorage.getItem('__loupe_last_mode'); } catch (e) {}
+      }
+      if (mode === 'active_mouse') enterActiveMouseMode();
+      else if (mode === 'active_focus') enterActiveFocusMode();
+      else if (mode === 'active_magnifier') enterMagnifierMode();
+      else enterPendingMode();
     } else {
       deactivate();
     }
