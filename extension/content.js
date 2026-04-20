@@ -1269,6 +1269,16 @@
       if (e.key === 'ArrowDown') { e.preventDefault(); handleArrowPan('down', fine); return; }
     }
 
+    // Home key in magnifier mode → reset view to top-left of the page
+    if (state === 'active_magnifier' && e.key === 'Home') {
+      e.preventDefault();
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      magnifierPanX = 0;
+      magnifierPanY = 0;
+      setTimeout(() => { doCapture(); updateLoupe(); }, 50);
+      return;
+    }
+
     // Zoom controls (+/- without modifiers)
     if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier') {
       if (!e.ctrlKey && !e.altKey && !e.metaKey) {
