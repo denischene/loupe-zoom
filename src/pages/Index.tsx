@@ -185,8 +185,8 @@ const Index = () => {
             <Download className="w-4 h-4" />
             Télécharger Loupe Zoom
           </Button>
-          <div className="text-sm text-muted-foreground space-y-2 text-left bg-card rounded-xl border p-5 shadow-sm max-w-lg mx-auto">
-            <p className="font-semibold text-foreground">Installation :</p>
+          <div className="text-sm space-y-2 text-left bg-card rounded-xl border p-5 shadow-sm max-w-lg mx-auto" style={{ color: "#3b1f0a" }}>
+            <p className="font-semibold" style={{ color: "#3b1f0a" }}>Installation :</p>
             <ol className="list-decimal list-inside space-y-1">
               <li>
                 Ouvrez <code className="text-primary">about:debugging#/runtime/this-firefox</code>
