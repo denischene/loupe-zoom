@@ -83,14 +83,14 @@ const Index = () => {
             {/* Mode Souris */}
             <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
               <h3 className="font-semibold flex items-center gap-2 text-base" style={{ color: "#3b1f0a" }}>
-                🖱️ Mode Souris
+                <span aria-hidden="true">🔎</span> Mode Souris
               </h3>
               <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: "#3b1f0a" }}>
                 <li>Cliquer sur l'icône Loupe dans la barre d'outils pour activer/désactiver la loupe.</li>
                 <li>Clic droit pour faire disparaître la loupe. Elle reste disponible au bout de la souris. Il suffit de faire un 1<sup>er</sup> clic pour la faire réapparaître.</li>
                 <li>Un 2<sup>e</sup> clic depuis la loupe visible valide l'élément (hyperlien, bouton…)</li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Ctrl+molette haut-bas</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Ctrl+molette haut-bas</kbd>{" "}
                   permet de changer de niveau de zoom.
                 </li>
               </ol>
@@ -99,32 +99,36 @@ const Index = () => {
             {/* Mode Focus-loupe */}
             <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
               <h3 className="font-semibold flex items-center gap-2 text-base" style={{ color: "#3b1f0a" }}>
-                ⌨️ Mode Focus-loupe
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b1f0a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="2" y="5" width="20" height="14" rx="2.5"/>
+                  <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M7 17h10"/>
+                </svg>
+                Mode Focus-loupe
               </h3>
               <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: "#3b1f0a" }}>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Tab</kbd> /{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Maj.+Tab</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Tab</kbd> /{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Maj.+Tab</kbd>{" "}
                   pour naviguer entre les éléments.
                 </li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Entrée</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Entrée</kbd>{" "}
                   pour faire apparaître la loupe.
                 </li>
                 <li>
                   Si l'élément est activable (lien, bouton), un 2<sup>e</sup>{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Entrée</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Entrée</kbd>{" "}
                   le valide.
                 </li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">+</kbd> et{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">-</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>+</kbd> et{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>-</kbd>{" "}
                   pour changer le niveau de zoom.
                 </li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Échap.</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Échap.</kbd>{" "}
                   pour faire disparaître le Focus-loupe.{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Entrée</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Entrée</kbd>{" "}
                   pour le faire réapparaître.
                 </li>
               </ol>
@@ -133,22 +137,42 @@ const Index = () => {
             {/* Mode Agrandisseur */}
             <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
               <h3 className="font-semibold flex items-center gap-2 text-base" style={{ color: "#3b1f0a" }}>
-                🔎 Mode Agrandisseur
+                <svg width="24" height="18" viewBox="0 0 28 20" fill="none" stroke="#3b1f0a" strokeWidth="2" aria-hidden="true">
+                  <rect x="1.5" y="1.5" width="25" height="17" rx="3.5"/>
+                  <text x="14" y="15" textAnchor="middle" fontFamily="system-ui,sans-serif" fontSize="13" fontWeight="800" fill="#3b1f0a" stroke="none">A</text>
+                </svg>
+                Mode Agrandisseur
               </h3>
               <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: "#3b1f0a" }}>
-                <li>Flèches directionnelles pour naviguer dans la page.</li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Entrée</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>▲</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>▼</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>◄</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>►</kbd>{" "}
+                  pour naviguer dans la page.
+                </li>
+                <li>
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Ctrl</kbd>+
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>▲</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>▼</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>◄</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>►</kbd>{" "}
+                  pour naviguer plus finement.
+                </li>
+                <li>
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Entrée</kbd>{" "}
                   pour valider un élément.
                 </li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">+</kbd> et{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">-</kbd>{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>+</kbd> et{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>-</kbd>{" "}
                   pour changer le niveau de zoom.
                 </li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Échap.</kbd>{" "}
-                  pour faire disparaître l'agrandisseur.
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Échap.</kbd>{" "}
+                  pour faire disparaître l'agrandisseur et{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: "#3b1f0a" }}>Ctrl+Maj+Z</kbd>{" "}
+                  pour le faire réapparaître.
                 </li>
               </ol>
             </div>
