@@ -627,10 +627,9 @@
       if (!mode) {
         try { mode = sessionStorage.getItem('__loupe_last_mode'); } catch (e) {}
       }
-      if (mode === 'active_mouse') enterActiveMouseMode();
-      else if (mode === 'active_focus') enterActiveFocusMode();
+      if (mode === 'active_focus') enterActiveFocusMode();
       else if (mode === 'active_magnifier') enterMagnifierMode();
-      else enterPendingMode();
+      else enterActiveMouseMode(); // default Loupe souris
     } else {
       deactivate();
     }
