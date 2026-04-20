@@ -709,7 +709,7 @@
             const before = window.scrollX;
             window.scrollBy({ left: -step, behavior: 'auto' });
             if (window.scrollX === before) hitEdge = 'left';
-            else { setTimeout(() => doCapture(), 50); }
+            else { scheduleEdgeScrollCapture(); }
           } else {
             magnifierPanX -= step;
           }
@@ -719,7 +719,7 @@
             const before = window.scrollX;
             window.scrollBy({ left: step, behavior: 'auto' });
             if (window.scrollX === before) hitEdge = 'right';
-            else { setTimeout(() => doCapture(), 50); }
+            else { scheduleEdgeScrollCapture(); }
           } else {
             magnifierPanX += step;
           }
@@ -729,7 +729,7 @@
             const before = window.scrollY;
             window.scrollBy({ top: -step, behavior: 'auto' });
             if (window.scrollY === before) hitEdge = 'top';
-            else { setTimeout(() => doCapture(), 50); }
+            else { scheduleEdgeScrollCapture(); }
           } else {
             magnifierPanY -= step;
           }
@@ -739,7 +739,7 @@
             const before = window.scrollY;
             window.scrollBy({ top: step, behavior: 'auto' });
             if (window.scrollY === before) hitEdge = 'bottom';
-            else { setTimeout(() => doCapture(), 50); }
+            else { scheduleEdgeScrollCapture(); }
           } else {
             magnifierPanY += step;
           }
