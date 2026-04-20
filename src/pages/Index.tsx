@@ -33,7 +33,7 @@ const Index = () => {
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
           Loupe-Zoom
         </h1>
-        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+        <p className="text-lg max-w-xl mx-auto" style={{ color: "#3b1f0a" }}>
           Extension Firefox de loupe souris et loupe clavier (
           <kbd className="px-2 py-0.5 rounded bg-muted text-foreground text-sm font-mono border border-border">
             Ctrl+Maj+Z
