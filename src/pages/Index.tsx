@@ -79,16 +79,33 @@ const Index = () => {
             Comment l'utiliser
           </h2>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Mode Clavier */}
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Mode Souris */}
             <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
-              <h3 className="font-semibold text-foreground flex items-center gap-2 text-base">
-                ⌨️ Mode Clavier
+              <h3 className="font-semibold flex items-center gap-2 text-base" style={{ color: "#3b1f0a" }}>
+                🖱️ Mode Souris
               </h3>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: "#3b1f0a" }}>
+                <li>Cliquer sur l'icône Loupe dans la barre d'outils pour activer/désactiver la loupe.</li>
+                <li>Clic droit pour faire disparaître la loupe. Elle reste disponible au bout de la souris. Il suffit de faire un 1<sup>er</sup> clic pour la faire réapparaître.</li>
+                <li>Un 2<sup>e</sup> clic depuis la loupe visible valide l'élément (hyperlien, bouton…)</li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Ctrl+Maj+Z</kbd>{" "}
-                  pour activer/désactiver l'extension loupe. Une fois activée, un petit logo apparaît au-dessus du focus.
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Ctrl+molette haut-bas</kbd>{" "}
+                  permet de changer de niveau de zoom.
+                </li>
+              </ol>
+            </div>
+
+            {/* Mode Focus-loupe */}
+            <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
+              <h3 className="font-semibold flex items-center gap-2 text-base" style={{ color: "#3b1f0a" }}>
+                ⌨️ Mode Focus-loupe
+              </h3>
+              <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: "#3b1f0a" }}>
+                <li>
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Tab</kbd> /{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Maj.+Tab</kbd>{" "}
+                  pour naviguer entre les éléments.
                 </li>
                 <li>
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Entrée</kbd>{" "}
@@ -100,42 +117,38 @@ const Index = () => {
                   le valide.
                 </li>
                 <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Tab</kbd> /{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Maj.+Tab</kbd>{" "}
-                  pour naviguer entre les éléments.
-                </li>
-                <li>
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">+</kbd> et{" "}
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">-</kbd>{" "}
-                  permettent de changer le niveau de zoom.
+                  pour changer le niveau de zoom.
                 </li>
                 <li>
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Échap.</kbd>{" "}
-                  pour faire disparaître la loupe.{" "}
+                  pour faire disparaître le Focus-loupe.{" "}
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Entrée</kbd>{" "}
-                  permet de la faire réapparaître.
+                  pour le faire réapparaître.
                 </li>
               </ol>
             </div>
 
-            {/* Mode Souris */}
+            {/* Mode Agrandisseur */}
             <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
-              <h3 className="font-semibold text-foreground flex items-center gap-2 text-base">
-                🖱️ Mode Souris
+              <h3 className="font-semibold flex items-center gap-2 text-base" style={{ color: "#3b1f0a" }}>
+                🔎 Mode Agrandisseur
               </h3>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: "#3b1f0a" }}>
+                <li>Flèches directionnelles pour naviguer dans la page.</li>
                 <li>
-                  Cliquer sur l'icône Loupe dans la barre d'outils pour activer/désactiver la loupe.
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Entrée</kbd>{" "}
+                  pour valider un élément.
                 </li>
                 <li>
-                  Clic droit pour faire disparaître la loupe. Elle reste disponible au bout de la souris. Il suffit de faire un 1<sup>er</sup> clic pour la faire réapparaître.
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">+</kbd> et{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">-</kbd>{" "}
+                  pour changer le niveau de zoom.
                 </li>
                 <li>
-                  Un 2<sup>e</sup> clic depuis la loupe visible valide l'élément (hyperlien, bouton…)
-                </li>
-                <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Ctrl+molette haut-bas</kbd>{" "}
-                  permet de changer de niveau de zoom.
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border">Échap.</kbd>{" "}
+                  pour faire disparaître l'agrandisseur.
                 </li>
               </ol>
             </div>
