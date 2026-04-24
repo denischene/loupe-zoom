@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font: 14px/1.6 system-ui, sans-serif;
+      padding: 24px 32px;
+      margin: 0;
+      background: #f5f5f5;
+      color: #333;
+      max-width: 480px;
+    }
+    h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+      color: #111;
+    }
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 14px;
+      color: #222;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #666;
+    }
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #fff;
+      color: #333;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .saved {
+      color: #16a34a;
+      font-size: 13px;
+      margin-top: 8px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .saved.show { opacity: 1; }
+    .info {
+      margin-top: 20px;
+      padding: 12px;
+      background: #e8f4fd;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #1e5a8a;
+      line-height: 1.5;
+    }
+    .commands {
+      margin-top: 20px;
+      padding: 14px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #333;
+    }
+    .commands ol {
+      margin: 4px 0 12px 0;
+      padding-left: 18px;
+    }
+    .commands li { margin-bottom: 4px; }
+    kbd {
+      background: #eee;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 12px;
+      font-family: monospace;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #1e5a8a;
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
+    .zoom-section {
+      margin-top: 16px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .zoom-section h3 {
+      margin: 0 0 8px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔍 Loupe Zoom — Réglages</h2>
+
+  <div class="zoom-section">
+    <h3>🖱️ Loupe souris <small style="color:#888">(Facile+)</small></h3>
+    <label for="mouse-zoom">Zoom par défaut</label>
+    <select id="mouse-zoom"></select>
+  </div>
+
+  <div class="zoom-section">
+    <h3>⌨️ Focus-loupe <small style="color:#888">(Vision+)</small></h3>
+    <label for="focus-zoom">Zoom par défaut</label>
+    <select id="focus-zoom"></select>
+  </div>
+
+  <div class="zoom-section">
+    <h3>🔎 Agrandisseur <small style="color:#888">(Vision++)</small></h3>
+    <label for="magnifier-zoom">Zoom par défaut</label>
+    <select id="magnifier-zoom"></select>
+  </div>
+
+  <div class="saved" id="saved-msg">✓ Enregistré</div>
+
+  <div class="info">
+    Pour modifier le raccourci clavier, allez dans<br>
+    <strong>about:addons → ⚙️ → Gérer les raccourcis d'extension</strong>
+  </div>
+
+  <div class="commands">
+    <h3>⌨️ Mode Clavier</h3>
+    <ol>
+      <li><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd> pour activer/désactiver l'extension loupe. Une fois activée, un petit logo loupe apparaît alors au-dessus du focus.</li>
+      <li><kbd>Entrée</kbd> pour faire apparaître la loupe. Quand la loupe est lancée la touche <kbd>Entrée</kbd> sur un élément activable (hyperlien, bouton) valide l'élément.</li>
+      <li><kbd>Échap.</kbd> pour faire disparaître la loupe.</li>
+      <li><kbd>Tab</kbd> / <kbd>Maj.</kbd>+<kbd>Tab</kbd> pour déplacer le focus d'élément en élément.</li>
+    </ol>
+
+    <h3>🖱️ Mode Souris</h3>
+    <ol>
+      <li>Cliquer sur l'icône Loupe dans la barre d'outils pour activer/désactiver la loupe.</li>
+      <li>Clic droit pour faire disparaître la loupe. Elle reste disponible au bout de la souris. Il suffit de faire un 1<sup>er</sup> clic pour la faire réapparaître.</li>
+      <li>Un 2<sup>e</sup> clic depuis la loupe visible valide l'élément (hyperlien, bouton…)</li>
+      <li><kbd>Ctrl</kbd>+<kbd>molette haut-bas</kbd> permet de changer de niveau de zoom.</li>
+    </ol>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
