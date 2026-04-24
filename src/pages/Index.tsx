@@ -210,11 +210,15 @@ const Index = () => {
               <Button
                 size="lg"
                 onClick={() => downloadFile("/loupe-extension.zip", "loupe-extension.zip")}
-                className="gap-2 w-full"
+                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight"
                 aria-label="Télécharger Loupe-Zoom pour Firefox"
               >
-                <Download className="w-4 h-4" aria-hidden="true" />
-                Télécharger Loupe-Zoom pour Firefox
+                <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>
+                  Télécharger Loupe-Zoom
+                  <br />
+                  pour Firefox
+                </span>
               </Button>
               <div className="text-sm space-y-2 text-left bg-background rounded-lg border p-4" style={{ color: DARK_BROWN }}>
                 <p className="font-semibold" style={{ color: DARK_BROWN }}>Installation :</p>
@@ -245,11 +249,15 @@ const Index = () => {
               <Button
                 size="lg"
                 onClick={() => downloadFile("/loupe-extension-chrome.zip", "loupe-extension-chrome.zip")}
-                className="gap-2 w-full"
+                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight"
                 aria-label="Télécharger Loupe-Zoom pour Edge et Chrome"
               >
-                <Download className="w-4 h-4" aria-hidden="true" />
-                Télécharger Loupe-Zoom pour Edge et Chrome
+                <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>
+                  Télécharger Loupe-Zoom
+                  <br />
+                  pour Edge et Chrome
+                </span>
               </Button>
               <div className="text-sm space-y-2 text-left bg-background rounded-lg border p-4" style={{ color: DARK_BROWN }}>
                 <p className="font-semibold" style={{ color: DARK_BROWN }}>Installation :</p>
