@@ -1,4 +1,12 @@
 (() => {
+  // Refresh the toolbar icon based on the popup's color scheme. The popup
+  // honors the system theme even on internal Edge pages where no content
+  // script can report it.
+  try {
+    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    chrome.runtime.sendMessage({ type: 'set_theme_icon', dark });
+  } catch (e) {}
+
   const mouseSelect = document.getElementById('mouse-zoom');
   const focusSelect = document.getElementById('focus-zoom');
   const magnifierSelect = document.getElementById('magnifier-zoom');
