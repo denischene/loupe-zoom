@@ -107,6 +107,12 @@ body.loupe-pending *:focus {
   transition: opacity 0.4s ease;
   opacity: 0;
 }
+@media (prefers-color-scheme: dark) {
+  .loupe-page-edge-bar {
+    background: #8ab4f8;
+    box-shadow: 0 0 12px rgba(138, 180, 248, 0.7), 0 0 0 2px rgba(0, 0, 0, 0.9) inset;
+  }
+}
 .loupe-page-edge-top { top: 0; left: 0; right: 0; height: 14px; }
 .loupe-page-edge-bottom { bottom: 0; left: 0; right: 0; height: 14px; }
 .loupe-page-edge-left { top: 0; bottom: 0; left: 0; width: 14px; }
