@@ -5,7 +5,7 @@
   "description": "Commandes au clavier :\n- Ctrl+Maj+Z pour activer/désactiver l'extension loupe. Une fois activée, un petit logo loupe apparaît alors au-dessus du focus.\n- Entrée pour faire apparaître la loupe. Quand la loupe est lancée la touche Entrée sur un élément activable (hyperlien, bouton) valide l'élément.\n- Échap. pour faire disparaître la loupe.\n- Tabulation/Maj.+Tabulation pour déplacer le focus d'élément en élément.\n\nCommandes à la souris :\n- Cliquer sur l'icône Loupe pour activer/désactiver l'extension loupe.\n- Échap. pour faire disparaître la loupe. Elle reste disponible au bout de la souris, il suffit de faire un 1er clic.\n- Un second clic depuis la loupe visible valide l'élément (hyperlien, bouton).\n- Ctrl+molette haut-bas permet de changer le niveau de zoom.",
   "author": "Chêne Denis",
   "homepage_url": "https://loupe-zoom.lovable.app",
-  "permissions": ["activeTab", "<all_urls>", "storage"],
+  "permissions": ["activeTab", "<all_urls>", "file:///*", "storage"],
   "browser_specific_settings": {
     "gecko": {
       "id": "loupe-zoom@lovable.app",
