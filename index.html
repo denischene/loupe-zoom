@@ -7,9 +7,25 @@
     <title>Loupe-Zoom</title>
     <meta name="description" content="Loupe-Zoom : extension d'accessibilité de loupe pour Firefox, Edge et Chrome (souris et clavier, raccourci Ctrl+Maj+Z).">
     <meta name="author" content="Lovable" />
-    <link rel="icon" type="image/png" href="/logo-loupe.png" media="(prefers-color-scheme: light)" />
-    <link rel="icon" type="image/png" href="/logo-loupe-light.png" media="(prefers-color-scheme: dark)" />
+    <link id="app-favicon" rel="icon" type="image/png" href="/logo-loupe.png" />
     <link rel="alternate icon" href="/favicon.ico" />
+    <script>
+      // Firefox / Chromium favicon dark-mode switcher.
+      // The browsers don't reliably re-evaluate `media` queries on <link rel="icon">,
+      // so we update the href dynamically when the color scheme changes.
+      (function () {
+        try {
+          var link = document.getElementById('app-favicon');
+          var mql = window.matchMedia('(prefers-color-scheme: dark)');
+          function apply() {
+            link.href = mql.matches ? '/logo-loupe-light.png' : '/logo-loupe.png';
+          }
+          apply();
+          if (mql.addEventListener) mql.addEventListener('change', apply);
+          else if (mql.addListener) mql.addListener(apply);
+        } catch (e) {}
+      })();
+    </script>
 
     <!-- TODO: Update og:title to match your application name -->
     
