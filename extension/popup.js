@@ -77,43 +77,51 @@
     }
   });
 
-  function sendToActiveTab(msg) {
-    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+  async function sendToActiveTab(msg) {
+    try {
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       if (tabs[0]) {
-        browser.tabs.sendMessage(tabs[0].id, msg).catch(() => {});
+        // If switching from another active mode, deactivate first so the
+        // content script properly tears down focus/magnifier state before
+        // entering the new mode. (Firefox needs this explicit sequence.)
+        if ((msg.type === 'activate_mouse' || msg.type === 'activate_focus' || msg.type === 'activate_magnifier')
+            && currentState && currentState !== 'off' && currentState !== msg.type) {
+          try { await browser.tabs.sendMessage(tabs[0].id, { type: 'deactivate' }); } catch (e) {}
+        }
+        try { await browser.tabs.sendMessage(tabs[0].id, msg); } catch (e) {}
       }
-    });
+    } catch (e) {}
   }
 
   // Activate buttons
-  activateMouseBtn.addEventListener('click', () => {
+  activateMouseBtn.addEventListener('click', async () => {
     if (currentState === 'active_mouse') {
-      sendToActiveTab({ type: 'deactivate' });
+      await sendToActiveTab({ type: 'deactivate' });
       updateButtons('off');
     } else {
-      sendToActiveTab({ type: 'activate_mouse' });
+      await sendToActiveTab({ type: 'activate_mouse' });
       updateButtons('active_mouse');
     }
     window.close();
   });
 
-  activateFocusBtn.addEventListener('click', () => {
+  activateFocusBtn.addEventListener('click', async () => {
     if (currentState === 'active_focus') {
-      sendToActiveTab({ type: 'deactivate' });
+      await sendToActiveTab({ type: 'deactivate' });
       updateButtons('off');
     } else {
-      sendToActiveTab({ type: 'activate_focus' });
+      await sendToActiveTab({ type: 'activate_focus' });
       updateButtons('active_focus');
     }
     window.close();
   });
 
-  activateMagnifierBtn.addEventListener('click', () => {
+  activateMagnifierBtn.addEventListener('click', async () => {
     if (currentState === 'active_magnifier') {
-      sendToActiveTab({ type: 'deactivate' });
+      await sendToActiveTab({ type: 'deactivate' });
       updateButtons('off');
     } else {
-      sendToActiveTab({ type: 'activate_magnifier' });
+      await sendToActiveTab({ type: 'activate_magnifier' });
       updateButtons('active_magnifier');
     }
     window.close();
