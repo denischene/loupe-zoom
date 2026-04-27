@@ -132,7 +132,8 @@ chrome.commands.onCommand.addListener((command) => {
       if (!tabs[0]) return;
       const tabId = tabs[0].id;
       const url = tabs[0].url || '';
-      const isPdf = /\.pdf($|\?|#)/i.test(url) || url.startsWith('file://');
+      const isViewer = url.indexOf(VIEWER_URL) === 0;
+      const isPdf = !isViewer && (/\.pdf($|\?|#)/i.test(url) || url.startsWith('file://'));
       if (isPdf) await ensureInjected(tabId);
       chrome.tabs.sendMessage(tabId, { type: 'toggle_loupe' }, () => void chrome.runtime.lastError);
     });
