@@ -39,7 +39,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["loupe.css"],
+      "resources": ["loupe.css", "pdfjs/web/viewer.html", "pdfjs/web/*", "pdfjs/build/*"],
       "matches": ["<all_urls>"]
     }
   ],
