@@ -41,7 +41,7 @@ const Index = () => {
           alt=""
           width={80}
           height={80}
-          className="mx-auto drop-shadow-md"
+          className="mx-auto drop-shadow-md browser-dark-invert"
         />
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
           Loupe-Zoom
@@ -210,7 +210,7 @@ const Index = () => {
               <Button
                 size="lg"
                 onClick={() => downloadFile("/loupe-extension.zip", "loupe-extension.zip")}
-                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight"
+                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight browser-dark-link-outline"
                 aria-label="Télécharger Loupe-Zoom pour Firefox"
               >
                 <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -249,7 +249,7 @@ const Index = () => {
               <Button
                 size="lg"
                 onClick={() => downloadFile("/loupe-extension-chrome.zip", "loupe-extension-chrome.zip")}
-                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight"
+                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight browser-dark-link-outline"
                 aria-label="Télécharger Loupe-Zoom pour Edge et Chrome"
               >
                 <Download className="w-4 h-4 shrink-0" aria-hidden="true" />

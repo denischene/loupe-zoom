@@ -105,3 +105,24 @@ All colors MUST be HSL.
     font-family: 'Accessible DfA', sans-serif;
   }
 }
+
+/* Adaptation au mode sombre forcé par le navigateur (prefers-color-scheme).
+   L'application n'écoute pas via .dark — on cible directement le media query. */
+@media (prefers-color-scheme: dark) {
+  /* Logo loupe en blanc */
+  .browser-dark-invert {
+    filter: invert(1) hue-rotate(180deg);
+  }
+  /* Bouton en style outline avec la couleur d'un lien (cohérent avec WCAG) */
+  .browser-dark-link-outline {
+    background-color: transparent !important;
+    color: hsl(210, 100%, 70%) !important;
+    border: 2px solid hsl(210, 100%, 70%) !important;
+  }
+  .browser-dark-link-outline:hover {
+    background-color: hsla(210, 100%, 70%, 0.12) !important;
+  }
+  .browser-dark-link-outline svg {
+    color: hsl(210, 100%, 70%) !important;
+  }
+}
