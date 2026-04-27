@@ -862,10 +862,21 @@
   function restoreState() {
     try {
       const saved = sessionStorage.getItem('__loupe_state');
-      if (saved === 'pending') {
-        loadZoomSettings();
-        enterPendingMode();
-      }
+      if (!saved) return;
+      // Load zoom levels then re-enter the same mode the user had on the
+      // previous page of this tab. Same-tab navigation preserves the mode.
+      Promise.resolve(loadZoomSettings()).then(() => {
+        if (saved === 'active_mouse') enterActiveMouseMode();
+        else if (saved === 'active_magnifier') enterMagnifierMode();
+        else if (saved === 'active_focus') {
+          const ae = document.activeElement;
+          if (ae && ae !== document.body && ae !== document.documentElement) {
+            enterActiveFocusMode(ae);
+          } else {
+            enterPendingMode();
+          }
+        } else enterPendingMode();
+      });
     } catch (e) {}
   }
 
@@ -1360,6 +1371,11 @@
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+    } else if (state === 'active_mouse') {
+      // A left-click in Loupe souris must NOT switch to Focus-loupe.
+      // The activable element is activated normally, but the focusin
+      // it triggers must be ignored by the mode-transition logic.
+      suppressFocusTransitionUntil = Date.now() + 1500;
     }
   }, true);
 
@@ -1475,13 +1491,20 @@
 
   // === KEYBOARD ===
 
-  document.addEventListener('keydown', (e) => {
-    // Escape: active → pending
-    if (e.key === 'Escape' && (state === 'active_focus' || state === 'active_mouse' || state === 'active_magnifier')) {
+  // Dedicated capture-phase Escape handler attached to window, so it wins
+  // even if the page (or a focused element) calls stopPropagation on keydown.
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (state === 'active_focus' || state === 'active_mouse' || state === 'active_magnifier') {
       e.preventDefault();
+      e.stopPropagation();
       enterPendingMode();
-      return;
     }
+  }, true);
+
+  document.addEventListener('keydown', (e) => {
+    // Escape handled above (capture phase).
+    if (e.key === 'Escape') return;
 
     // Enter in pending → activate focus without triggering element
     if (e.key === 'Enter' && state === 'pending') {
@@ -1706,7 +1729,10 @@
   window.addEventListener('beforeunload', () => {
     if (state !== 'off') {
       try {
-        sessionStorage.setItem('__loupe_state', 'pending');
+        // Save the actual current mode so same-tab navigation restores it.
+        // A brand-new tab gets `start_pending` from the background script,
+        // which has no sessionStorage of its own, so it stays in pending.
+        sessionStorage.setItem('__loupe_state', state);
         sessionStorage.setItem('__loupe_zoom', String(zoom));
       } catch (e) {}
     }

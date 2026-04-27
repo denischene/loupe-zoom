@@ -67,6 +67,20 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
   } catch (e) {}
 });
 
+// Also re-query when a tab finishes loading (handles internal/new pages).
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (info.status !== 'complete' || !tab.active) return;
+  try {
+    chrome.tabs.sendMessage(tabId, { type: 'query_theme' }, (resp) => {
+      void chrome.runtime.lastError;
+      if (resp && typeof resp.dark === 'boolean') {
+        try { chrome.storage.local.set({ toolbarDark: !!resp.dark }); } catch (e) {}
+        applyToolbarIcon(!!resp.dark);
+      }
+    });
+  } catch (e) {}
+});
+
 chrome.tabs.onCreated.addListener((tab) => {
   if (tab.openerTabId && activeTabs.has(tab.openerTabId)) {
     const sendPending = (attempts) => {
