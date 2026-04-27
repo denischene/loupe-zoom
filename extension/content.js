@@ -1638,32 +1638,36 @@
       return;
     }
     if (msg.type === 'activate_mouse') {
-      if (state === 'off') loadZoomSettings();
-      enterActiveMouseMode();
+      // Always reload latest user-chosen zoom values from storage so popup
+      // activation uses the current selection (not a stale in-memory value).
+      Promise.resolve(loadZoomSettings()).then(() => {
+        enterActiveMouseMode();
+      });
       return;
     }
     if (msg.type === 'activate_focus') {
-      if (state === 'off') loadZoomSettings();
-      let el = document.activeElement;
-      if (!el || el === document.body || el === document || el === document.documentElement) {
-        // Simulate a Tab press: focus the first focusable element in the page
-        const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
-        const candidates = Array.from(document.querySelectorAll(focusableSelector)).filter((node) => {
-          if (!(node instanceof HTMLElement)) return false;
-          if (node.offsetParent === null && node.tagName !== 'BODY') return false;
-          const rect = node.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        });
-        if (candidates.length > 0) {
-          try { candidates[0].focus({ preventScroll: false }); } catch (err) {}
-          el = document.activeElement;
+      Promise.resolve(loadZoomSettings()).then(() => {
+        let el = document.activeElement;
+        if (!el || el === document.body || el === document || el === document.documentElement) {
+          // Simulate a Tab press: focus the first focusable element in the page
+          const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+          const candidates = Array.from(document.querySelectorAll(focusableSelector)).filter((node) => {
+            if (!(node instanceof HTMLElement)) return false;
+            if (node.offsetParent === null && node.tagName !== 'BODY') return false;
+            const rect = node.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+          });
+          if (candidates.length > 0) {
+            try { candidates[0].focus({ preventScroll: false }); } catch (err) {}
+            el = document.activeElement;
+          }
         }
-      }
-      if (el && el !== document.body && el !== document && el !== document.documentElement) {
-        enterActiveFocusMode(el);
-      } else {
-        enterPendingMode();
-      }
+        if (el && el !== document.body && el !== document && el !== document.documentElement) {
+          enterActiveFocusMode(el);
+        } else {
+          enterPendingMode();
+        }
+      });
       return;
     }
     if (msg.type === 'deactivate') {
@@ -1675,10 +1679,9 @@
       return;
     }
     if (msg.type === 'activate_magnifier') {
-      if (state === 'off') {
-        loadZoomSettings();
-      }
-      enterMagnifierMode();
+      Promise.resolve(loadZoomSettings()).then(() => {
+        enterMagnifierMode();
+      });
       return;
     }
     if (msg.type === 'update_zoom_setting') {
