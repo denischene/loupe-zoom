@@ -62,10 +62,17 @@
   let suppressFocusTransitionUntil = 0;
 
   // Browser-level page zoom (applied via document.body.style.zoom)
+  // initialBrowserZoom = the user's browser zoom captured at first activation.
+  // All mode-transition zoom bumps are computed relative to this baseline so
+  // that a user already at e.g. 110% gets +10pp / +30pp on top of THEIR zoom.
+  let initialBrowserZoom = null; // null until captured
   function getCurrentPageZoomPercent() {
     try {
       const z = document.body && document.body.style && document.body.style.zoom;
-      if (!z) return 100;
+      if (!z) {
+        // Fallback: derive from devicePixelRatio approximation is unreliable; use 100.
+        return 100;
+      }
       if (typeof z === 'string' && z.endsWith('%')) return parseFloat(z) || 100;
       const n = parseFloat(z);
       return isNaN(n) ? 100 : n * 100;
@@ -79,6 +86,22 @@
   }
   function ensurePageZoomAtLeast(percent) {
     if (getCurrentPageZoomPercent() < percent) setPageZoomPercent(percent);
+  }
+  // Capture the user's initial browser zoom on first activation. If body.style.zoom
+  // is unset, default baseline to 110% (per spec).
+  function captureInitialBrowserZoom() {
+    if (initialBrowserZoom != null) return;
+    try {
+      const raw = document.body && document.body.style && document.body.style.zoom;
+      if (raw) {
+        initialBrowserZoom = getCurrentPageZoomPercent();
+      } else {
+        initialBrowserZoom = 110;
+      }
+    } catch (e) { initialBrowserZoom = 110; }
+  }
+  function baseZoom() {
+    return initialBrowserZoom != null ? initialBrowserZoom : 110;
   }
 
   // Arrow hint indicators (shown around focus-loupe when manual nav is needed)
