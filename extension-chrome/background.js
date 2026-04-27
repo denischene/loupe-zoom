@@ -18,6 +18,14 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg && msg.type === 'loupe_off' && sender.tab) {
     activeTabs.delete(sender.tab.id);
   }
+  if (msg && msg.type === 'set_theme_icon') {
+    // Chromium MV3 does not support manifest "theme_icons", so we switch the
+    // toolbar icon dynamically based on the page's prefers-color-scheme.
+    const path = msg.dark ? 'icon-light.png' : 'icon.png';
+    try {
+      chrome.action.setIcon({ path: { 48: path, 128: path } }, () => void chrome.runtime.lastError);
+    } catch (e) {}
+  }
   return false;
 });
 
