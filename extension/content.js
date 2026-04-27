@@ -1279,13 +1279,24 @@
   function isActivatableElement(el) {
     if (!el || el === document || el === document.body) return false;
     const tag = el.tagName;
-    return tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' ||
-      tag === 'SELECT' || tag === 'TEXTAREA' || el.hasAttribute('tabindex') ||
-      el.hasAttribute('onclick') || el.getAttribute('role') === 'button' ||
-      el.getAttribute('role') === 'link' || el.getAttribute('role') === 'checkbox' ||
-      el.getAttribute('role') === 'menuitem' || !!el.closest('a, button') ||
-      tag === 'IMG' || tag === 'VIDEO' || tag === 'IFRAME' || tag === 'OBJECT' ||
-      tag === 'EMBED' || el.contentEditable === 'true';
+    // Only "truly activable" elements switch to Focus-loupe.
+    // IMG/VIDEO/IFRAME/OBJECT/EMBED and bare [tabindex]/contenteditable do NOT
+    // qualify any more — clicking them keeps Loupe souris and shows a pending
+    // focus indicator instead.
+    if (tag === 'A' && el.href) return true;
+    if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA') return true;
+    if (tag === 'INPUT') {
+      const t = (el.type || '').toLowerCase();
+      if (t === 'hidden') return false;
+      return true;
+    }
+    if (tag === 'SUMMARY' || tag === 'LABEL') return true;
+    if (el.hasAttribute('onclick')) return true;
+    const role = el.getAttribute && el.getAttribute('role');
+    if (role && ['button','link','checkbox','radio','switch','menuitem','tab','option'].indexOf(role) !== -1) return true;
+    const closest = el.closest && el.closest('a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="tab"]');
+    if (closest) return true;
+    return false;
   }
 
   function onFocusChange(e) {
@@ -1301,7 +1312,15 @@
 
     if (state !== 'active_mouse' && state !== 'active_focus') return;
     if (Date.now() < suppressFocusTransitionUntil) return;
-    if (!isActivatableElement(el)) return;
+    if (!isActivatableElement(el)) {
+      // In Loupe souris, focusing a non-activable element must NOT switch to
+      // Focus-loupe. Just show a pending focus indicator on the element and
+      // keep the current mode.
+      if (state === 'active_mouse' && el && el !== document.body) {
+        try { showPendingIndicator(el); } catch (err) {}
+      }
+      return;
+    }
 
     clearFocusTimers();
     stopSlowCapture();
