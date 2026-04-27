@@ -87,8 +87,20 @@
 
   function sendToActiveTab(msg) {
     browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-      if (tabs[0]) {
-        browser.tabs.sendMessage(tabs[0].id, msg).catch(() => {});
+      if (!tabs[0]) return;
+      const tabId = tabs[0].id;
+      const url = tabs[0].url || '';
+      const isPdf = /\.pdf($|\?|#)/i.test(url) || url.startsWith('file://');
+      const send = () => browser.tabs.sendMessage(tabId, msg).catch(() => {});
+      if (isPdf && chrome.scripting) {
+        // Force-inject for PDF pages where content_scripts may not auto-load.
+        chrome.scripting.insertCSS({ target: { tabId }, files: ['loupe.css'] }).catch(() => {});
+        chrome.scripting.executeScript({
+          target: { tabId },
+          files: ['browser-polyfill.js', 'content.js']
+        }).then(send, send);
+      } else {
+        send();
       }
     });
   }
