@@ -95,6 +95,7 @@
     } catch (e) { return 100; }
   }
   function setPageZoomPercent(percent) {
+    if (IS_PDF) return; // PDF viewer ignores body.style.zoom
     try {
       if (!document.body) return;
       document.body.style.zoom = (percent / 100).toString();
