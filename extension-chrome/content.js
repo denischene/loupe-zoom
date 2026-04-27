@@ -62,10 +62,17 @@
   let suppressFocusTransitionUntil = 0;
 
   // Browser-level page zoom (applied via document.body.style.zoom)
+  // initialBrowserZoom = the user's browser zoom captured at first activation.
+  // All mode-transition zoom bumps are computed relative to this baseline so
+  // that a user already at e.g. 110% gets +10pp / +30pp on top of THEIR zoom.
+  let initialBrowserZoom = null; // null until captured
   function getCurrentPageZoomPercent() {
     try {
       const z = document.body && document.body.style && document.body.style.zoom;
-      if (!z) return 100;
+      if (!z) {
+        // Fallback: derive from devicePixelRatio approximation is unreliable; use 100.
+        return 100;
+      }
       if (typeof z === 'string' && z.endsWith('%')) return parseFloat(z) || 100;
       const n = parseFloat(z);
       return isNaN(n) ? 100 : n * 100;
@@ -79,6 +86,22 @@
   }
   function ensurePageZoomAtLeast(percent) {
     if (getCurrentPageZoomPercent() < percent) setPageZoomPercent(percent);
+  }
+  // Capture the user's initial browser zoom on first activation. If body.style.zoom
+  // is unset, default baseline to 110% (per spec).
+  function captureInitialBrowserZoom() {
+    if (initialBrowserZoom != null) return;
+    try {
+      const raw = document.body && document.body.style && document.body.style.zoom;
+      if (raw) {
+        initialBrowserZoom = getCurrentPageZoomPercent();
+      } else {
+        initialBrowserZoom = 110;
+      }
+    } catch (e) { initialBrowserZoom = 110; }
+  }
+  function baseZoom() {
+    return initialBrowserZoom != null ? initialBrowserZoom : 110;
   }
 
   // Arrow hint indicators (shown around focus-loupe when manual nav is needed)
@@ -404,22 +427,22 @@
     const newZoom = zoom + delta;
     if (newZoom < 2 || newZoom > 20) return;
 
+    const base = baseZoom();
+
     // --- Upward transitions ---
     if (delta > 0) {
       if (state === 'active_mouse' && newZoom > MOUSE_ZOOM_MAX) {
-        // Mouse ×4 → Focus ×5: bump browser zoom to 120% (if lower)
-        ensurePageZoomAtLeast(120);
+        // Mouse ×4 → Focus ×5: bump browser zoom to base + 10 (if lower)
+        ensurePageZoomAtLeast(base + 10);
         focusZoom = newZoom;
         zoom = newZoom;
         // Find a focusable element near the mouse position
         let elAtMouse = document.elementFromPoint(mouseX, mouseY);
         let focusable = elAtMouse;
-        // Walk up to find an activatable / focusable ancestor
         while (focusable && focusable !== document.body && !isActivatableElement(focusable)) {
           focusable = focusable.parentElement;
         }
         if (!focusable || focusable === document.body) focusable = elAtMouse;
-        // Make non-focusable elements receive focus so Tab will resume from here
         if (focusable && focusable !== document.body) {
           try {
             if (!focusable.hasAttribute('tabindex') &&
@@ -434,11 +457,10 @@
         return;
       }
       if (state === 'active_focus' && newZoom > FOCUS_ZOOM_MAX) {
-        // Focus ×9 → Magnifier ×10: bump browser zoom to 140% (if lower)
-        ensurePageZoomAtLeast(140);
+        // Focus ×9 → Magnifier ×10: bump browser zoom to base + 30 (if lower)
+        ensurePageZoomAtLeast(base + 30);
         magnifierZoom = newZoom;
         zoom = newZoom;
-        // Place magnifier view near last focus/mouse position
         magnifierPanX = Math.max(0, (state === 'active_focus' ? focusX : mouseX) - window.innerWidth / (2 * newZoom));
         magnifierPanY = Math.max(0, (state === 'active_focus' ? focusY : mouseY) - window.innerHeight / (2 * newZoom));
         enterMagnifierMode();
@@ -454,11 +476,10 @@
     // --- Downward transitions ---
     if (delta < 0) {
       if (state === 'active_magnifier' && newZoom < MAGNIFIER_ZOOM_MIN) {
-        // Magnifier → Focus-loupe (at ×7 or below): set browser zoom to 120%
-        setPageZoomPercent(120);
+        // Magnifier ×8 → Focus ×7: set browser zoom to base + 10
+        setPageZoomPercent(base + 10);
         focusZoom = newZoom;
         zoom = newZoom;
-        // Focus near the center of what was visible in magnifier
         const cx = magnifierPanX + window.innerWidth / (2 * (newZoom + 1));
         const cy = magnifierPanY + window.innerHeight / (2 * (newZoom + 1));
         const elAt = document.elementFromPoint(
@@ -472,12 +493,29 @@
         showZoomIndicator();
         return;
       }
-      // From focus-loupe reaching ×2: reset browser zoom to 100%
-      if (state === 'active_focus' && newZoom <= 2) {
-        setPageZoomPercent(100);
+      if (state === 'active_focus' && newZoom < FOCUS_ZOOM_MIN) {
+        // Focus ×2 → Mouse ×... we cap at FOCUS_ZOOM_MIN already; this branch unused.
       }
-      // From focus-loupe going below ×5 does NOT switch to mouse loupe
-      // User must left-click to go back to mouse mode
+      if (state === 'active_focus' && newZoom <= MOUSE_ZOOM_MAX - 1) {
+        // Focus ×4 → Mouse ×3: restore browser zoom to base (initial)
+        setPageZoomPercent(base);
+        mouseZoom = newZoom;
+        zoom = newZoom;
+        // Position mouse near the focused element so the loupe appears there
+        if (focusTarget) {
+          try {
+            const rect = focusTarget.getBoundingClientRect();
+            mouseX = rect.left + rect.width / 2;
+            mouseY = rect.top + rect.height / 2;
+          } catch (e) {}
+        }
+        enterActiveMouseMode();
+        zoom = newZoom;
+        mouseZoom = newZoom;
+        applyLoupeSize();
+        showZoomIndicator();
+        return;
+      }
     }
 
     // --- Same mode zoom ---
@@ -500,7 +538,22 @@
     } catch (e) {}
   }
 
+  // Cleanup residual state from any previous mode before switching to a new one.
+  // Used when the user activates a different mode while one is already active.
+  function clearPreviousModeArtifacts() {
+    clearFocusTimers();
+    hideArrowHints();
+    hidePendingIndicator();
+    if (mouseMoveTimer) { clearTimeout(mouseMoveTimer); mouseMoveTimer = null; }
+    focusLoupeOverride = null;
+    focusTarget = null;
+    magnifierPanX = 0;
+    magnifierPanY = 0;
+  }
+
   function enterActiveMouseMode() {
+    captureInitialBrowserZoom();
+    clearPreviousModeArtifacts();
     state = 'active_mouse';
     zoom = mouseZoom;
     createLoupe();
@@ -508,19 +561,22 @@
     document.body.classList.remove('loupe-pending');
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
-    if (!currentImg) {
-      doCapture();
-    }
+    // Always recapture when (re)entering so the loupe shows fresh content
+    currentImg = null;
+    doCapture();
     startSlowCapture();
     notifyBackground(true);
     persistState();
   }
 
   function enterActiveFocusMode(el) {
+    captureInitialBrowserZoom();
+    clearPreviousModeArtifacts();
     state = 'active_focus';
     zoom = focusZoom;
     focusTarget = el || document.activeElement;
     createLoupe();
+    applyLoupeSize();
     document.body.classList.remove('loupe-pending');
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
@@ -530,9 +586,8 @@
   }
 
   function enterMagnifierMode() {
-    // Ensure focus-mode arrow hints are removed before building the magnifier view
-    hideArrowHints();
-    clearFocusTimers();
+    captureInitialBrowserZoom();
+    clearPreviousModeArtifacts();
     state = 'active_magnifier';
     zoom = magnifierZoom;
     createLoupe();
@@ -546,6 +601,7 @@
     magnifierPanY = 0;
     magnifierLastElement = document.activeElement || null;
 
+    currentImg = null;
     doCapture(() => {
       updateLoupe();
     });
@@ -614,7 +670,10 @@
     hidePendingIndicator();
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    setPageZoomPercent(100);
+    // Restore the browser zoom to the user's original level (captured on first
+    // activation). If unknown, fall back to 100%.
+    setPageZoomPercent(initialBrowserZoom != null ? initialBrowserZoom : 100);
+    initialBrowserZoom = null;
     notifyBackground(false);
     try { sessionStorage.removeItem('__loupe_state'); } catch (e) {}
     try { sessionStorage.removeItem('__loupe_zoom'); } catch (e) {}
