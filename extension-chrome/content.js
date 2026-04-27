@@ -1473,11 +1473,31 @@
       return;
     }
 
-    // Enter in magnifier → activate the centered element
+    // Enter in magnifier → focus centered element and let the browser fire a
+    // trusted click (preserves user activation for fetch+blob downloads).
     if (e.key === 'Enter' && state === 'active_magnifier') {
-      e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+      const cx0 = magnifierPanX + window.innerWidth / (2 * zoom);
+      const cy0 = magnifierPanY + window.innerHeight / (2 * zoom);
+      const x0 = Math.max(0, Math.min(window.innerWidth - 1, cx0));
+      const y0 = Math.max(0, Math.min(window.innerHeight - 1, cy0));
+      const prevDisplay = loupe ? loupe.style.display : '';
+      if (loupe) loupe.style.display = 'none';
+      const elAtCenter = document.elementFromPoint(x0, y0);
+      if (loupe) loupe.style.display = prevDisplay;
+      const activable = elAtCenter ? (findActivableAncestor(elAtCenter) || elAtCenter) : null;
+      const tag = activable && activable.tagName ? activable.tagName.toLowerCase() : '';
+      const isNativeButton = tag === 'button' || tag === 'a' || tag === 'input' || tag === 'summary';
+      if (activable && isNativeButton && document.activeElement !== activable) {
+        try { activable.focus({ preventScroll: true }); } catch (_) { try { activable.focus(); } catch (_) {} }
+      }
+      if (activable && isNativeButton && document.activeElement === activable) {
+        magnifierLastElement = activable;
+        setTimeout(() => { if (state === 'active_magnifier') doCapture(); }, 250);
+        return; // do NOT preventDefault — browser dispatches trusted click
+      }
+      e.preventDefault();
       activateMagnifierElement();
       return;
     }
