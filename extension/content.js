@@ -670,7 +670,10 @@
     hidePendingIndicator();
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    setPageZoomPercent(100);
+    // Restore the browser zoom to the user's original level (captured on first
+    // activation). If unknown, fall back to 100%.
+    setPageZoomPercent(initialBrowserZoom != null ? initialBrowserZoom : 100);
+    initialBrowserZoom = null;
     notifyBackground(false);
     try { sessionStorage.removeItem('__loupe_state'); } catch (e) {}
     try { sessionStorage.removeItem('__loupe_zoom'); } catch (e) {}
