@@ -122,14 +122,17 @@
       const g = parseInt(localStorage.getItem('__loupe_magnifier_zoom'), 10);
       if (g >= MAGNIFIER_ZOOM_MIN && g <= MAGNIFIER_ZOOM_MAX) magnifierZoom = g;
     } catch (e) {}
-    // Also load from extension storage
+    // Also load from extension storage (returns a promise so callers can await
+    // freshness before activating a mode from the popup).
     try {
-      browser.storage.local.get(['mouseZoom', 'focusZoom', 'magnifierZoom']).then((data) => {
+      return browser.storage.local.get(['mouseZoom', 'focusZoom', 'magnifierZoom']).then((data) => {
         if (data.mouseZoom >= MOUSE_ZOOM_MIN && data.mouseZoom <= MOUSE_ZOOM_MAX) mouseZoom = data.mouseZoom;
         if (data.focusZoom >= FOCUS_ZOOM_MIN && data.focusZoom <= FOCUS_ZOOM_MAX) focusZoom = data.focusZoom;
         if (data.magnifierZoom >= MAGNIFIER_ZOOM_MIN && data.magnifierZoom <= MAGNIFIER_ZOOM_MAX) magnifierZoom = data.magnifierZoom;
-      });
-    } catch (e) {}
+      }).catch(() => {});
+    } catch (e) {
+      return Promise.resolve();
+    }
   }
 
   function getActiveZoom() {
