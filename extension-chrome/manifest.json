@@ -17,13 +17,13 @@
     },
     "theme_icons": [
       {
-        "light": "icon-light.png",
-        "dark": "icon.png",
+        "light": "icon.png",
+        "dark": "icon-light.png",
         "size": 48
       },
       {
-        "light": "icon-light.png",
-        "dark": "icon.png",
+        "light": "icon.png",
+        "dark": "icon-light.png",
         "size": 128
       }
     ],
