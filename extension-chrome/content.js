@@ -634,14 +634,24 @@
 
   function enterActiveMouseMode() {
     captureInitialBrowserZoom();
+    const wasFocus = state === 'active_focus';
+    const wasMagnifier = state === 'active_magnifier';
     clearPreviousModeArtifacts();
-    // Prevent the still-focused element (from a previous focus mode) from
-    // immediately re-triggering focus mode via the global focusin handler.
-    suppressFocusTransitionUntil = Date.now() + 800;
+    suppressFocusTransitionUntil = Date.now() + 1000;
     try {
       const ae = document.activeElement;
       if (ae && ae !== document.body && typeof ae.blur === 'function') ae.blur();
     } catch (e) {}
+    if (wasFocus && typeof focusX === 'number' && typeof focusY === 'number' && focusX > 0 && focusY > 0) {
+      mouseX = focusX;
+      mouseY = focusY;
+    } else if (wasMagnifier) {
+      mouseX = magnifierPanX + window.innerWidth / (2 * zoom);
+      mouseY = magnifierPanY + window.innerHeight / (2 * zoom);
+    } else if (!mouseX && !mouseY) {
+      mouseX = Math.floor(window.innerWidth / 2);
+      mouseY = Math.floor(window.innerHeight / 2);
+    }
     state = 'active_mouse';
     zoom = mouseZoom;
     createLoupe();
@@ -649,9 +659,8 @@
     document.body.classList.remove('loupe-pending');
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
-    // Always recapture when (re)entering so the loupe shows fresh content
     currentImg = null;
-    doCapture();
+    doCapture(() => { updateLoupe(); });
     startSlowCapture();
     notifyBackground(true);
     persistState();
