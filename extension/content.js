@@ -1464,11 +1464,41 @@
       return;
     }
 
-    // Enter in magnifier → activate the centered element
+    // Enter in magnifier → activate the centered element.
+    // Strategy: focus the centered activable element synchronously and let the
+    // browser's NATIVE Enter→click conversion happen on the focused button.
+    // This preserves "transient user activation", which is required for
+    // programmatic <a download> clicks (e.g. fetch+blob download buttons).
+    // Only as a fallback (no activable element found, or focus failed) do we
+    // dispatch a synthetic click.
     if (e.key === 'Enter' && state === 'active_magnifier') {
-      e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+      // Find the activable element under the visible center
+      const cx0 = magnifierPanX + window.innerWidth / (2 * zoom);
+      const cy0 = magnifierPanY + window.innerHeight / (2 * zoom);
+      const x0 = Math.max(0, Math.min(window.innerWidth - 1, cx0));
+      const y0 = Math.max(0, Math.min(window.innerHeight - 1, cy0));
+      const prevDisplay = loupe ? loupe.style.display : '';
+      if (loupe) loupe.style.display = 'none';
+      const elAtCenter = document.elementFromPoint(x0, y0);
+      if (loupe) loupe.style.display = prevDisplay;
+      const activable = elAtCenter ? (findActivableAncestor(elAtCenter) || elAtCenter) : null;
+      const tag = activable && activable.tagName ? activable.tagName.toLowerCase() : '';
+      const isNativeButton = tag === 'button' || tag === 'a' || tag === 'input' || tag === 'summary';
+      if (activable && isNativeButton && document.activeElement !== activable) {
+        try { activable.focus({ preventScroll: true }); } catch (_) { try { activable.focus(); } catch (_) {} }
+      }
+      // If a native button/anchor is now focused, let the browser handle Enter
+      // natively so user activation is preserved (allows fetch+blob downloads).
+      if (activable && isNativeButton && document.activeElement === activable) {
+        magnifierLastElement = activable;
+        // Schedule a recapture afterwards in case the page changed
+        setTimeout(() => { if (state === 'active_magnifier') doCapture(); }, 250);
+        return; // do NOT preventDefault — browser fires trusted click
+      }
+      // Fallback: synthetic activation for non-native widgets
+      e.preventDefault();
       activateMagnifierElement();
       return;
     }
