@@ -634,14 +634,30 @@
 
   function enterActiveMouseMode() {
     captureInitialBrowserZoom();
+    const wasFocus = state === 'active_focus';
+    const wasMagnifier = state === 'active_magnifier';
     clearPreviousModeArtifacts();
     // Prevent the still-focused element (from a previous focus mode) from
     // immediately re-triggering focus mode via the global focusin handler.
-    suppressFocusTransitionUntil = Date.now() + 800;
+    suppressFocusTransitionUntil = Date.now() + 1000;
     try {
       const ae = document.activeElement;
       if (ae && ae !== document.body && typeof ae.blur === 'function') ae.blur();
     } catch (e) {}
+    // If we were in focus or magnifier mode and the user invokes mouse mode
+    // (e.g. via the popup) without moving the mouse, the loupe would be drawn
+    // at stale coordinates. Anchor it to the last focus position or the
+    // viewport center so it is immediately visible.
+    if (wasFocus && typeof focusX === 'number' && typeof focusY === 'number' && focusX > 0 && focusY > 0) {
+      mouseX = focusX;
+      mouseY = focusY;
+    } else if (wasMagnifier) {
+      mouseX = magnifierPanX + window.innerWidth / (2 * zoom);
+      mouseY = magnifierPanY + window.innerHeight / (2 * zoom);
+    } else if (!mouseX && !mouseY) {
+      mouseX = Math.floor(window.innerWidth / 2);
+      mouseY = Math.floor(window.innerHeight / 2);
+    }
     state = 'active_mouse';
     zoom = mouseZoom;
     createLoupe();
@@ -651,7 +667,7 @@
     hidePendingIndicator();
     // Always recapture when (re)entering so the loupe shows fresh content
     currentImg = null;
-    doCapture();
+    doCapture(() => { updateLoupe(); });
     startSlowCapture();
     notifyBackground(true);
     persistState();
@@ -1464,11 +1480,41 @@
       return;
     }
 
-    // Enter in magnifier → activate the centered element
+    // Enter in magnifier → activate the centered element.
+    // Strategy: focus the centered activable element synchronously and let the
+    // browser's NATIVE Enter→click conversion happen on the focused button.
+    // This preserves "transient user activation", which is required for
+    // programmatic <a download> clicks (e.g. fetch+blob download buttons).
+    // Only as a fallback (no activable element found, or focus failed) do we
+    // dispatch a synthetic click.
     if (e.key === 'Enter' && state === 'active_magnifier') {
-      e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+      // Find the activable element under the visible center
+      const cx0 = magnifierPanX + window.innerWidth / (2 * zoom);
+      const cy0 = magnifierPanY + window.innerHeight / (2 * zoom);
+      const x0 = Math.max(0, Math.min(window.innerWidth - 1, cx0));
+      const y0 = Math.max(0, Math.min(window.innerHeight - 1, cy0));
+      const prevDisplay = loupe ? loupe.style.display : '';
+      if (loupe) loupe.style.display = 'none';
+      const elAtCenter = document.elementFromPoint(x0, y0);
+      if (loupe) loupe.style.display = prevDisplay;
+      const activable = elAtCenter ? (findActivableAncestor(elAtCenter) || elAtCenter) : null;
+      const tag = activable && activable.tagName ? activable.tagName.toLowerCase() : '';
+      const isNativeButton = tag === 'button' || tag === 'a' || tag === 'input' || tag === 'summary';
+      if (activable && isNativeButton && document.activeElement !== activable) {
+        try { activable.focus({ preventScroll: true }); } catch (_) { try { activable.focus(); } catch (_) {} }
+      }
+      // If a native button/anchor is now focused, let the browser handle Enter
+      // natively so user activation is preserved (allows fetch+blob downloads).
+      if (activable && isNativeButton && document.activeElement === activable) {
+        magnifierLastElement = activable;
+        // Schedule a recapture afterwards in case the page changed
+        setTimeout(() => { if (state === 'active_magnifier') doCapture(); }, 250);
+        return; // do NOT preventDefault — browser fires trusted click
+      }
+      // Fallback: synthetic activation for non-native widgets
+      e.preventDefault();
       activateMagnifierElement();
       return;
     }

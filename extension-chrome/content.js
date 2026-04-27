@@ -634,14 +634,24 @@
 
   function enterActiveMouseMode() {
     captureInitialBrowserZoom();
+    const wasFocus = state === 'active_focus';
+    const wasMagnifier = state === 'active_magnifier';
     clearPreviousModeArtifacts();
-    // Prevent the still-focused element (from a previous focus mode) from
-    // immediately re-triggering focus mode via the global focusin handler.
-    suppressFocusTransitionUntil = Date.now() + 800;
+    suppressFocusTransitionUntil = Date.now() + 1000;
     try {
       const ae = document.activeElement;
       if (ae && ae !== document.body && typeof ae.blur === 'function') ae.blur();
     } catch (e) {}
+    if (wasFocus && typeof focusX === 'number' && typeof focusY === 'number' && focusX > 0 && focusY > 0) {
+      mouseX = focusX;
+      mouseY = focusY;
+    } else if (wasMagnifier) {
+      mouseX = magnifierPanX + window.innerWidth / (2 * zoom);
+      mouseY = magnifierPanY + window.innerHeight / (2 * zoom);
+    } else if (!mouseX && !mouseY) {
+      mouseX = Math.floor(window.innerWidth / 2);
+      mouseY = Math.floor(window.innerHeight / 2);
+    }
     state = 'active_mouse';
     zoom = mouseZoom;
     createLoupe();
@@ -649,9 +659,8 @@
     document.body.classList.remove('loupe-pending');
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
-    // Always recapture when (re)entering so the loupe shows fresh content
     currentImg = null;
-    doCapture();
+    doCapture(() => { updateLoupe(); });
     startSlowCapture();
     notifyBackground(true);
     persistState();
@@ -1464,11 +1473,31 @@
       return;
     }
 
-    // Enter in magnifier → activate the centered element
+    // Enter in magnifier → focus centered element and let the browser fire a
+    // trusted click (preserves user activation for fetch+blob downloads).
     if (e.key === 'Enter' && state === 'active_magnifier') {
-      e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+      const cx0 = magnifierPanX + window.innerWidth / (2 * zoom);
+      const cy0 = magnifierPanY + window.innerHeight / (2 * zoom);
+      const x0 = Math.max(0, Math.min(window.innerWidth - 1, cx0));
+      const y0 = Math.max(0, Math.min(window.innerHeight - 1, cy0));
+      const prevDisplay = loupe ? loupe.style.display : '';
+      if (loupe) loupe.style.display = 'none';
+      const elAtCenter = document.elementFromPoint(x0, y0);
+      if (loupe) loupe.style.display = prevDisplay;
+      const activable = elAtCenter ? (findActivableAncestor(elAtCenter) || elAtCenter) : null;
+      const tag = activable && activable.tagName ? activable.tagName.toLowerCase() : '';
+      const isNativeButton = tag === 'button' || tag === 'a' || tag === 'input' || tag === 'summary';
+      if (activable && isNativeButton && document.activeElement !== activable) {
+        try { activable.focus({ preventScroll: true }); } catch (_) { try { activable.focus(); } catch (_) {} }
+      }
+      if (activable && isNativeButton && document.activeElement === activable) {
+        magnifierLastElement = activable;
+        setTimeout(() => { if (state === 'active_magnifier') doCapture(); }, 250);
+        return; // do NOT preventDefault — browser dispatches trusted click
+      }
+      e.preventDefault();
       activateMagnifierElement();
       return;
     }
