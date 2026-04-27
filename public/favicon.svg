@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .stroke { stroke: #000; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .stroke { stroke: #fff; }
+    }
+  </style>
+  <g class="stroke" stroke-width="6" stroke-linecap="round">
+    <circle cx="26" cy="26" r="18"/>
+    <line x1="40" y1="40" x2="56" y2="56"/>
+  </g>
+</svg>
