@@ -332,6 +332,66 @@
     if (slowCaptureInterval) { clearInterval(slowCaptureInterval); slowCaptureInterval = null; }
   }
 
+  // === MAGNIFIER EVENT-DRIVEN CAPTURE ===
+  // In magnifier mode, periodic capture causes a visible flicker (the loupe
+  // hides itself briefly to expose the page). To minimize flicker, we capture
+  // ONLY when something actually changed in the page: focus moved, scroll
+  // happened, an element was activated, or DOM mutated significantly (e.g.
+  // listbox/menu opened).
+  let magnifierCaptureTimer = null;
+  let magnifierMutationObserver = null;
+  let magnifierEventListeners = null;
+
+  function scheduleMagnifierCapture(delay) {
+    if (state !== 'active_magnifier') return;
+    if (magnifierCaptureTimer) clearTimeout(magnifierCaptureTimer);
+    magnifierCaptureTimer = setTimeout(() => {
+      magnifierCaptureTimer = null;
+      if (state === 'active_magnifier') doCapture();
+    }, delay || 120);
+  }
+
+  function startMagnifierEventCapture() {
+    stopMagnifierEventCapture();
+    magnifierEventListeners = [];
+    const onFocus = () => scheduleMagnifierCapture(80);
+    const onScroll = () => scheduleMagnifierCapture(120);
+    const onClick = () => scheduleMagnifierCapture(150);
+    const onChange = () => scheduleMagnifierCapture(120);
+    document.addEventListener('focusin', onFocus, true);
+    window.addEventListener('scroll', onScroll, true);
+    document.addEventListener('click', onClick, true);
+    document.addEventListener('change', onChange, true);
+    magnifierEventListeners.push(
+      ['focusin', onFocus, true, document],
+      ['scroll', onScroll, true, window],
+      ['click', onClick, true, document],
+      ['change', onChange, true, document]
+    );
+    try {
+      magnifierMutationObserver = new MutationObserver(() => {
+        scheduleMagnifierCapture(150);
+      });
+      magnifierMutationObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style', 'aria-expanded', 'aria-hidden', 'open', 'hidden']
+      });
+    } catch (e) {}
+  }
+
+  function stopMagnifierEventCapture() {
+    if (magnifierCaptureTimer) { clearTimeout(magnifierCaptureTimer); magnifierCaptureTimer = null; }
+    if (magnifierMutationObserver) { try { magnifierMutationObserver.disconnect(); } catch (e) {} magnifierMutationObserver = null; }
+    if (magnifierEventListeners) {
+      magnifierEventListeners.forEach(([ev, fn, capture, target]) => {
+        try { target.removeEventListener(ev, fn, capture); } catch (e) {}
+      });
+      magnifierEventListeners = null;
+    }
+  }
+
   // === RENDER ===
 
   function updateLoupe() {
