@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Loupe Zoom",
-  "version": "4.1.5",
+  "version": "4.1.6",
   "description": "Loupe de zoom (souris, focus-clavier, agrandisseur). Raccourci Ctrl+Maj+Z pour activer/désactiver.",
   "author": "Chêne Denis",
   "homepage_url": "https://loupe-zoom.lovable.app",
@@ -12,9 +12,21 @@
   },
   "action": {
     "default_icon": {
-      "48": "icon-both.png",
-      "128": "icon-both.png"
+      "48": "icon.png",
+      "128": "icon.png"
     },
+    "theme_icons": [
+      {
+        "light": "icon-light.png",
+        "dark": "icon.png",
+        "size": 48
+      },
+      {
+        "light": "icon-light.png",
+        "dark": "icon.png",
+        "size": 128
+      }
+    ],
     "default_title": "Loupe Zoom (Ctrl+Maj+Z)",
     "default_popup": "popup.html"
   },
