@@ -38,10 +38,11 @@
 
   function updateButtons(state) {
     currentState = state;
+    const CHECK = '\u2714 ';
 
     // Mouse button
     if (state === 'active_mouse') {
-      activateMouseBtn.textContent = 'Désactiver la Loupe souris';
+      activateMouseBtn.textContent = CHECK + 'Désactiver la Loupe souris';
       activateMouseBtn.classList.add('deactivate');
     } else {
       activateMouseBtn.textContent = 'Activer la Loupe souris';
@@ -50,7 +51,7 @@
 
     // Focus button
     if (state === 'active_focus') {
-      activateFocusBtn.textContent = 'Désactiver le Focus-loupe';
+      activateFocusBtn.textContent = CHECK + 'Désactiver le Focus-loupe';
       activateFocusBtn.classList.add('deactivate');
     } else {
       activateFocusBtn.textContent = 'Activer le Focus-loupe';
@@ -59,7 +60,7 @@
 
     // Magnifier button
     if (state === 'active_magnifier') {
-      activateMagnifierBtn.textContent = "Désactiver l'Agrandisseur";
+      activateMagnifierBtn.textContent = CHECK + "Désactiver l'Agrandisseur";
       activateMagnifierBtn.classList.add('deactivate');
     } else {
       activateMagnifierBtn.textContent = "Activer l'Agrandisseur";
