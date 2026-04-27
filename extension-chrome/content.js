@@ -1613,6 +1613,15 @@
       toggle();
       return;
     }
+    if (msg.type === 'query_theme') {
+      try {
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        sendResponse({ dark });
+      } catch (e) {
+        sendResponse({ dark: false });
+      }
+      return true;
+    }
     if (msg.type === 'start_pending') {
       if (state === 'off') {
         loadZoomSettings();
