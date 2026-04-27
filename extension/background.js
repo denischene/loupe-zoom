@@ -1,6 +1,46 @@
 // Track which tabs have loupe active/pending
 const activeTabs = new Set();
 
+// === PDF interception ===
+// Redirect PDF requests to our bundled PDF.js viewer so the loupe can run on
+// a regular HTML/canvas page (the native pdf.js viewer in Firefox lives under
+// `resource://` and does not allow content scripts).
+const VIEWER_URL = browser.runtime.getURL('pdfjs/web/viewer.html');
+
+function isPdfRequest(details) {
+  try {
+    if (!details || !details.url) return false;
+    const url = details.url;
+    if (url.startsWith(VIEWER_URL)) return false; // already in viewer
+    // Skip range requests (PDF.js itself fetches the file in chunks)
+    if (details.requestHeaders) {
+      for (const h of details.requestHeaders) {
+        if (h.name && h.name.toLowerCase() === 'range') return false;
+      }
+    }
+    // Heuristics: extension in URL, or top-level frame on a .pdf
+    if (/\.pdf($|\?|#)/i.test(url)) return true;
+  } catch (_) {}
+  return false;
+}
+
+try {
+  browser.webRequest.onBeforeRequest.addListener(
+    (details) => {
+      if (details.type !== 'main_frame' && details.type !== 'sub_frame') return {};
+      if (!isPdfRequest(details)) return {};
+      // Avoid loops
+      if (details.url.indexOf(VIEWER_URL) === 0) return {};
+      const target = VIEWER_URL + '?file=' + encodeURIComponent(details.url);
+      return { redirectUrl: target };
+    },
+    { urls: ['<all_urls>'], types: ['main_frame', 'sub_frame'] },
+    ['blocking']
+  );
+} catch (e) {
+  console.warn('Loupe: webRequest unavailable', e);
+}
+
 // Handle capture requests
 browser.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === 'capture') {

@@ -4,6 +4,53 @@ importScripts('browser-polyfill.js');
 
 const activeTabs = new Set();
 
+// === PDF interception via declarativeNetRequest ===
+// Redirect HTTP(S) and file:// PDF requests to our bundled PDF.js viewer so
+// the loupe can run on a real HTML/canvas page (Chromium's native PDF plugin
+// is out-of-process and not capturable via captureVisibleTab).
+const VIEWER_URL = chrome.runtime.getURL('pdfjs/web/viewer.html');
+
+async function registerPdfRedirect() {
+  try {
+    const rules = [
+      {
+        id: 1,
+        priority: 1,
+        action: {
+          type: 'redirect',
+          redirect: { regexSubstitution: VIEWER_URL + '?file=\\0' }
+        },
+        condition: {
+          regexFilter: '^https?://.*\\.pdf(\\?.*)?$',
+          resourceTypes: ['main_frame', 'sub_frame']
+        }
+      },
+      {
+        id: 2,
+        priority: 1,
+        action: {
+          type: 'redirect',
+          redirect: { regexSubstitution: VIEWER_URL + '?file=\\0' }
+        },
+        condition: {
+          regexFilter: '^file://.*\\.pdf$',
+          resourceTypes: ['main_frame', 'sub_frame']
+        }
+      }
+    ];
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [1, 2],
+      addRules: rules
+    });
+  } catch (e) {
+    console.warn('Loupe: DNR registration failed', e);
+  }
+}
+chrome.runtime.onInstalled.addListener(registerPdfRedirect);
+chrome.runtime.onStartup.addListener(registerPdfRedirect);
+registerPdfRedirect();
+
+
 // Apply the toolbar icon based on the requested dark-mode flag.
 // We render the PNG into an OffscreenCanvas → ImageData because Edge MV3
 // sometimes ignores `setIcon({ path: ... })` updates from a service worker
@@ -85,7 +132,8 @@ chrome.commands.onCommand.addListener((command) => {
       if (!tabs[0]) return;
       const tabId = tabs[0].id;
       const url = tabs[0].url || '';
-      const isPdf = /\.pdf($|\?|#)/i.test(url) || url.startsWith('file://');
+      const isViewer = url.indexOf(VIEWER_URL) === 0;
+      const isPdf = !isViewer && (/\.pdf($|\?|#)/i.test(url) || url.startsWith('file://'));
       if (isPdf) await ensureInjected(tabId);
       chrome.tabs.sendMessage(tabId, { type: 'toggle_loupe' }, () => void chrome.runtime.lastError);
     });

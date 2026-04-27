@@ -90,7 +90,8 @@
       if (!tabs[0]) return;
       const tabId = tabs[0].id;
       const url = tabs[0].url || '';
-      const isPdf = /\.pdf($|\?|#)/i.test(url) || url.startsWith('file://');
+      const isViewer = url.indexOf(chrome.runtime.getURL('pdfjs/web/viewer.html')) === 0;
+      const isPdf = !isViewer && (/\.pdf($|\?|#)/i.test(url) || url.startsWith('file://'));
       const send = () => browser.tabs.sendMessage(tabId, msg).catch(() => {});
       if (isPdf && chrome.scripting) {
         // Force-inject for PDF pages where content_scripts may not auto-load.
