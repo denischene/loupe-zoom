@@ -3,13 +3,55 @@
 <head>
   <meta charset="utf-8">
   <style>
+    :root {
+      --bg: #f8f8f8;
+      --fg: #333;
+      --section-bg: #fff;
+      --section-border: #e0e0e0;
+      --title-fg: #111;
+      --subtitle-fg: #888;
+      --hint-fg: #555;
+      --select-bg: #fff;
+      --select-border: #ccc;
+      --link: #1a73e8;
+      --link-hover: #1557b0;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --shortcut-bg: #e8f4fd;
+      --shortcut-fg: #1e5a8a;
+      --kbd-bg: #ddd;
+      --kbd-border: #bbb;
+      --icon-color: #111;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --fg: #e6e6e6;
+        --section-bg: #2a2a2a;
+        --section-border: #3a3a3a;
+        --title-fg: #fff;
+        --subtitle-fg: #aaa;
+        --hint-fg: #c4c4c4;
+        --select-bg: #1e1e1e;
+        --select-border: #555;
+        --link: #8ab4f8;
+        --link-hover: #aecbfa;
+        --danger: #f28b82;
+        --danger-hover: #f6aea9;
+        --shortcut-bg: #1a2a3a;
+        --shortcut-fg: #aecbfa;
+        --kbd-bg: #3a3a3a;
+        --kbd-border: #555;
+        --icon-color: #fff;
+      }
+    }
     body {
       width: 280px;
       font: 13px/1.5 system-ui, sans-serif;
       margin: 0;
       padding: 14px 16px;
-      background: #f8f8f8;
-      color: #333;
+      background: var(--bg);
+      color: var(--fg);
     }
     .header {
       display: flex;
@@ -17,7 +59,7 @@
       justify-content: space-between;
       margin-bottom: 12px;
       padding-bottom: 10px;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid var(--section-border);
     }
     .header h2 {
       margin: 0;
@@ -25,19 +67,20 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      color: var(--title-fg);
     }
     .header img { width: 22px; height: 22px; }
     .section {
       margin-bottom: 10px;
       padding: 8px 10px;
-      background: #fff;
-      border: 1px solid #e0e0e0;
+      background: var(--section-bg);
+      border: 1px solid var(--section-border);
       border-radius: 8px;
     }
     .section-title {
       font-size: 12px;
       font-weight: 700;
-      color: #111;
+      color: var(--title-fg);
       margin-bottom: 4px;
       display: flex;
       align-items: center;
@@ -45,13 +88,13 @@
     }
     .section-subtitle {
       font-size: 10px;
-      color: #888;
+      color: var(--subtitle-fg);
       font-weight: 400;
     }
     .section-hint {
       display: block;
       font-size: 10px;
-      color: #555;
+      color: var(--hint-fg);
       font-weight: 400;
       margin-top: 2px;
       font-style: italic;
@@ -64,6 +107,14 @@
       height: 18px;
       margin-right: 2px;
       vertical-align: -3px;
+      color: var(--icon-color);
+    }
+    .mode-icon svg {
+      stroke: currentColor;
+    }
+    .mode-icon svg text {
+      fill: currentColor;
+      stroke: none;
     }
     .zoom-row {
       display: flex;
@@ -73,15 +124,16 @@
     }
     .zoom-row label {
       font-size: 11px;
-      color: #666;
+      color: var(--hint-fg);
       min-width: 36px;
     }
     .zoom-row select {
       flex: 1;
       padding: 3px 6px;
       border-radius: 5px;
-      border: 1px solid #ccc;
-      background: #fff;
+      border: 1px solid var(--select-border);
+      background: var(--select-bg);
+      color: var(--fg);
       font-size: 12px;
       cursor: pointer;
     }
@@ -90,51 +142,87 @@
       width: 100%;
       margin-top: 6px;
       padding: 5px 0;
-      background: #1a73e8;
+      background: var(--link);
       color: #fff;
-      border: none;
+      border: 2px solid var(--link);
       border-radius: 4px;
       font-size: 11px;
       cursor: pointer;
       font-weight: 600;
     }
-    .activate-btn:hover { background: #1557b0; }
-    .activate-btn.deactivate {
-      background: #dc2626;
+    .activate-btn:hover { background: var(--link-hover); border-color: var(--link-hover); }
+    .activate-btn:focus-visible {
+      outline: 2px solid var(--link);
+      outline-offset: 2px;
     }
-    .activate-btn.deactivate:hover { background: #b91c1c; }
+    .activate-btn.deactivate {
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+    .activate-btn.deactivate:hover {
+      background: var(--danger-hover);
+      border-color: var(--danger-hover);
+    }
+    /* Mode sombre : boutons en outline avec couleur du lien */
+    @media (prefers-color-scheme: dark) {
+      .activate-btn {
+        background: transparent;
+        color: var(--link);
+        border: 2px solid var(--link);
+      }
+      .activate-btn:hover {
+        background: rgba(138, 180, 248, 0.12);
+        border-color: var(--link-hover);
+        color: var(--link-hover);
+      }
+      .activate-btn.deactivate {
+        background: transparent;
+        color: var(--danger);
+        border: 2px solid var(--danger);
+      }
+      .activate-btn.deactivate:hover {
+        background: rgba(242, 139, 130, 0.12);
+        border-color: var(--danger-hover);
+        color: var(--danger-hover);
+      }
+    }
     .shortcut {
       margin-top: 10px;
       padding: 6px 10px;
-      background: #e8f4fd;
+      background: var(--shortcut-bg);
       border-radius: 6px;
       font-size: 10px;
-      color: #1e5a8a;
+      color: var(--shortcut-fg);
       line-height: 1.6;
     }
     kbd {
-      background: #ddd;
-      border: 1px solid #bbb;
+      background: var(--kbd-bg);
+      border: 1px solid var(--kbd-border);
       border-radius: 2px;
       padding: 0 3px;
       font-size: 10px;
       font-family: monospace;
+      color: var(--fg);
+    }
+    /* Logo de l'en-tête : inverser en mode sombre pour être blanc */
+    @media (prefers-color-scheme: dark) {
+      .header img { filter: invert(1) hue-rotate(180deg); }
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <h2><img src="icon-both.png" alt=""> Loupe Zoom</h2>
+    <h2><img src="icon.png" alt=""> Loupe Zoom</h2>
   </div>
 
   <div class="section">
     <div class="section-title">
-      <span><span class="mode-icon">🔎</span>Loupe souris</span>
+      <span><span class="mode-icon" aria-hidden="true">🔎</span>Loupe souris</span>
       <span class="section-subtitle">Facile+</span>
     </div>
     <span class="section-hint">Ctrl+molette pour changer le zoom</span>
     <div class="zoom-row">
-      <label>Zoom</label>
+      <label for="mouse-zoom">Zoom</label>
       <select id="mouse-zoom"></select>
     </div>
     <button class="activate-btn" id="activate-mouse">Activer la Loupe souris</button>
@@ -143,13 +231,13 @@
   <div class="section">
     <div class="section-title">
       <span><span class="mode-icon" aria-hidden="true">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M7 17h10"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M7 17h10"/></svg>
       </span>Focus-loupe</span>
       <span class="section-subtitle">Vision+</span>
     </div>
     <span class="section-hint">Tabulation pour avancer et +/− pour changer le zoom</span>
     <div class="zoom-row">
-      <label>Zoom</label>
+      <label for="focus-zoom">Zoom</label>
       <select id="focus-zoom"></select>
     </div>
     <button class="activate-btn" id="activate-focus">Activer le Focus-loupe</button>
@@ -158,13 +246,13 @@
   <div class="section">
     <div class="section-title">
       <span><span class="mode-icon" aria-hidden="true">
-        <svg width="20" height="16" viewBox="0 0 28 20" fill="none" stroke="#111" stroke-width="2"><rect x="1.5" y="1.5" width="25" height="17" rx="3.5"/><text x="14" y="15" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800" fill="#111" stroke="none">A</text></svg>
+        <svg width="20" height="16" viewBox="0 0 28 20" fill="none" stroke-width="2"><rect x="1.5" y="1.5" width="25" height="17" rx="3.5"/><text x="14" y="15" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800">A</text></svg>
       </span>Agrandisseur</span>
       <span class="section-subtitle">Vision++</span>
     </div>
     <span class="section-hint">Flèches pour naviguer</span>
     <div class="zoom-row">
-      <label>Zoom</label>
+      <label for="magnifier-zoom">Zoom</label>
       <select id="magnifier-zoom"></select>
     </div>
     <button class="activate-btn" id="activate-magnifier">Activer l'Agrandisseur</button>
