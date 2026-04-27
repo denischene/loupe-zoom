@@ -862,10 +862,15 @@
   function restoreState() {
     try {
       const saved = sessionStorage.getItem('__loupe_state');
-      if (saved === 'pending') {
-        loadZoomSettings();
-        enterPendingMode();
-      }
+      if (!saved) return;
+      // Load zoom levels then re-enter the same mode the user had on the
+      // previous page of this tab. Same-tab navigation preserves the mode.
+      Promise.resolve(loadZoomSettings()).then(() => {
+        if (saved === 'active_mouse') enterActiveMouseMode();
+        else if (saved === 'active_focus') enterActiveFocusMode();
+        else if (saved === 'active_magnifier') enterMagnifierMode();
+        else enterPendingMode();
+      });
     } catch (e) {}
   }
 
