@@ -1652,4 +1652,17 @@
   // === INIT ===
   loadZoomSettings();
   restoreState();
+
+  // === THEME → TOOLBAR ICON (Chromium only) ===
+  // Chromium MV3 ignores manifest "theme_icons", so notify the background to
+  // switch icon.png (dark-on-light) ↔ icon-light.png (light-on-dark).
+  try {
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const sendTheme = () => {
+      try { browser.runtime.sendMessage({ type: 'set_theme_icon', dark: mql.matches }); } catch (e) {}
+    };
+    sendTheme();
+    if (mql.addEventListener) mql.addEventListener('change', sendTheme);
+    else if (mql.addListener) mql.addListener(sendTheme);
+  } catch (e) {}
 })();
