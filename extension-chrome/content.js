@@ -61,6 +61,22 @@
   // Suppress focusin-driven mode transitions briefly (e.g. after right-click)
   let suppressFocusTransitionUntil = 0;
 
+  // PDF page detection: in Chrome/Edge/Firefox PDF viewers, the document body
+  // is an <embed>/<iframe> wrapper — body.style.zoom does not reflow content,
+  // and there is no useful DOM focus/activation. We still allow the loupe to
+  // run (mouse-follow + capture-based magnifier) but skip page-zoom mutations
+  // and DOM-focus logic that would otherwise be no-ops or harmful.
+  function isPdfPage() {
+    try {
+      if (location && location.pathname && /\.pdf($|\?|#)/i.test(location.pathname)) return true;
+      if (document.contentType === 'application/pdf') return true;
+      const e = document.querySelector('embed[type="application/pdf"], embed[type="application/x-google-chrome-pdf"]');
+      if (e) return true;
+    } catch (_) {}
+    return false;
+  }
+  const IS_PDF = isPdfPage();
+
   // Browser-level page zoom (applied via document.body.style.zoom)
   // initialBrowserZoom = the user's browser zoom captured at first activation.
   // All mode-transition zoom bumps are computed relative to this baseline so
