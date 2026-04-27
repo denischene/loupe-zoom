@@ -1367,6 +1367,11 @@
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+    } else if (state === 'active_mouse') {
+      // A left-click in Loupe souris must NOT switch to Focus-loupe.
+      // The activable element is activated normally, but the focusin
+      // it triggers must be ignored by the mode-transition logic.
+      suppressFocusTransitionUntil = Date.now() + 1500;
     }
   }, true);
 
