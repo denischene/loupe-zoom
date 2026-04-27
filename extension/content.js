@@ -732,6 +732,7 @@
     state = 'pending';
     clearFocusTimers();
     stopSlowCapture();
+    stopMagnifierEventCapture();
     if (mouseMoveTimer) { clearTimeout(mouseMoveTimer); mouseMoveTimer = null; }
     document.body.classList.remove('loupe-active');
     document.body.classList.add('loupe-pending');
