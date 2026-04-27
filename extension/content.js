@@ -635,6 +635,13 @@
   function enterActiveMouseMode() {
     captureInitialBrowserZoom();
     clearPreviousModeArtifacts();
+    // Prevent the still-focused element (from a previous focus mode) from
+    // immediately re-triggering focus mode via the global focusin handler.
+    suppressFocusTransitionUntil = Date.now() + 800;
+    try {
+      const ae = document.activeElement;
+      if (ae && ae !== document.body && typeof ae.blur === 'function') ae.blur();
+    } catch (e) {}
     state = 'active_mouse';
     zoom = mouseZoom;
     createLoupe();
