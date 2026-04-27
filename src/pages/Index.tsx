@@ -25,7 +25,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background browser-dark-text">
       {/* Skip link for keyboard users (WCAG 2.4.1) */}
       <a
         href="#usage-title"
