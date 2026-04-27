@@ -5,11 +5,33 @@ importScripts('browser-polyfill.js');
 const activeTabs = new Set();
 
 // Apply the toolbar icon based on the requested dark-mode flag.
-function applyToolbarIcon(dark) {
-  const path = dark ? 'icon-light.png' : 'icon.png';
+// We render the PNG into an OffscreenCanvas → ImageData because Edge MV3
+// sometimes ignores `setIcon({ path: ... })` updates from a service worker
+// (the image stays at the manifest default). ImageData updates are reliable.
+async function applyToolbarIcon(dark) {
+  const file = dark ? 'icon-light.png' : 'icon.png';
   try {
-    chrome.action.setIcon({ path: { 48: path, 128: path } }, () => void chrome.runtime.lastError);
-  } catch (e) {}
+    const url = chrome.runtime.getURL(file);
+    const sizes = [16, 32, 48, 128];
+    const imageData = {};
+    const blob = await (await fetch(url)).blob();
+    const bitmap = await createImageBitmap(blob);
+    for (const size of sizes) {
+      const canvas = new OffscreenCanvas(size, size);
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(bitmap, 0, 0, size, size);
+      imageData[size] = ctx.getImageData(0, 0, size, size);
+    }
+    await new Promise((resolve) => {
+      chrome.action.setIcon({ imageData }, () => { void chrome.runtime.lastError; resolve(); });
+    });
+  } catch (e) {
+    // Fallback to path-based call.
+    try {
+      chrome.action.setIcon({ path: { 16: file, 32: file, 48: file, 128: file } }, () => void chrome.runtime.lastError);
+    } catch (e2) {}
+  }
 }
 
 // Restore the last known theme on service-worker startup so the toolbar icon
