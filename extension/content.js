@@ -538,7 +538,22 @@
     } catch (e) {}
   }
 
+  // Cleanup residual state from any previous mode before switching to a new one.
+  // Used when the user activates a different mode while one is already active.
+  function clearPreviousModeArtifacts() {
+    clearFocusTimers();
+    hideArrowHints();
+    hidePendingIndicator();
+    if (mouseMoveTimer) { clearTimeout(mouseMoveTimer); mouseMoveTimer = null; }
+    focusLoupeOverride = null;
+    focusTarget = null;
+    magnifierPanX = 0;
+    magnifierPanY = 0;
+  }
+
   function enterActiveMouseMode() {
+    captureInitialBrowserZoom();
+    clearPreviousModeArtifacts();
     state = 'active_mouse';
     zoom = mouseZoom;
     createLoupe();
@@ -546,19 +561,22 @@
     document.body.classList.remove('loupe-pending');
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
-    if (!currentImg) {
-      doCapture();
-    }
+    // Always recapture when (re)entering so the loupe shows fresh content
+    currentImg = null;
+    doCapture();
     startSlowCapture();
     notifyBackground(true);
     persistState();
   }
 
   function enterActiveFocusMode(el) {
+    captureInitialBrowserZoom();
+    clearPreviousModeArtifacts();
     state = 'active_focus';
     zoom = focusZoom;
     focusTarget = el || document.activeElement;
     createLoupe();
+    applyLoupeSize();
     document.body.classList.remove('loupe-pending');
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
@@ -568,9 +586,8 @@
   }
 
   function enterMagnifierMode() {
-    // Ensure focus-mode arrow hints are removed before building the magnifier view
-    hideArrowHints();
-    clearFocusTimers();
+    captureInitialBrowserZoom();
+    clearPreviousModeArtifacts();
     state = 'active_magnifier';
     zoom = magnifierZoom;
     createLoupe();
@@ -584,6 +601,7 @@
     magnifierPanY = 0;
     magnifierLastElement = document.activeElement || null;
 
+    currentImg = null;
     doCapture(() => {
       updateLoupe();
     });
