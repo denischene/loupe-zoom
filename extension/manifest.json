@@ -53,7 +53,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["<all_urls>", "file:///*"],
       "js": ["content.js"],
       "css": ["loupe.css"]
     }
