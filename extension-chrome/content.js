@@ -867,9 +867,15 @@
       // previous page of this tab. Same-tab navigation preserves the mode.
       Promise.resolve(loadZoomSettings()).then(() => {
         if (saved === 'active_mouse') enterActiveMouseMode();
-        else if (saved === 'active_focus') enterActiveFocusMode();
         else if (saved === 'active_magnifier') enterMagnifierMode();
-        else enterPendingMode();
+        else if (saved === 'active_focus') {
+          const ae = document.activeElement;
+          if (ae && ae !== document.body && ae !== document.documentElement) {
+            enterActiveFocusMode(ae);
+          } else {
+            enterPendingMode();
+          }
+        } else enterPendingMode();
       });
     } catch (e) {}
   }
