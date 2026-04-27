@@ -65,12 +65,29 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return false;
 });
 
+// Force-inject the content script + CSS into a tab. Used for PDF pages where
+// the static `content_scripts` declaration may not auto-inject.
+async function ensureInjected(tabId) {
+  try {
+    await chrome.scripting.insertCSS({ target: { tabId }, files: ['loupe.css'] });
+  } catch (e) { /* may already be injected */ }
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['browser-polyfill.js', 'content.js']
+    });
+  } catch (e) { /* may already be injected or be a restricted page */ }
+}
+
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'toggle-loupe') {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { type: 'toggle_loupe' }, () => void chrome.runtime.lastError);
-      }
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      if (!tabs[0]) return;
+      const tabId = tabs[0].id;
+      const url = tabs[0].url || '';
+      const isPdf = /\.pdf($|\?|#)/i.test(url) || url.startsWith('file://');
+      if (isPdf) await ensureInjected(tabId);
+      chrome.tabs.sendMessage(tabId, { type: 'toggle_loupe' }, () => void chrome.runtime.lastError);
     });
   }
 });
