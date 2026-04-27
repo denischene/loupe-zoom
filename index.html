@@ -7,18 +7,30 @@
     <title>Loupe-Zoom</title>
     <meta name="description" content="Loupe-Zoom : extension d'accessibilité de loupe pour Firefox, Edge et Chrome (souris et clavier, raccourci Ctrl+Maj+Z).">
     <meta name="author" content="Lovable" />
-    <link id="app-favicon" rel="icon" type="image/png" href="/logo-loupe.png" />
-    <link rel="alternate icon" href="/favicon.ico" />
     <script>
       // Firefox / Chromium favicon dark-mode switcher.
-      // The browsers don't reliably re-evaluate `media` queries on <link rel="icon">,
-      // so we update the href dynamically when the color scheme changes.
+      // Browsers don't reliably re-evaluate `media` queries on <link rel="icon">.
+      // We inject a fresh <link> at runtime and remove any default to force
+      // the browser to fetch the right icon. We also re-inject on toggle to
+      // bypass favicon caches that ignore href updates on the same node.
       (function () {
         try {
-          var link = document.getElementById('app-favicon');
+          // Remove any pre-existing favicon links so the browser doesn't
+          // pick a stale default before our scheme-aware one is applied.
+          var existing = document.querySelectorAll('link[rel~="icon"]');
+          existing.forEach(function (n) { n.parentNode && n.parentNode.removeChild(n); });
+
           var mql = window.matchMedia('(prefers-color-scheme: dark)');
+          var current = null;
           function apply() {
-            link.href = mql.matches ? '/logo-loupe-light.png' : '/logo-loupe.png';
+            var href = (mql.matches ? '/logo-loupe-light.png' : '/logo-loupe.png');
+            if (current && current.parentNode) current.parentNode.removeChild(current);
+            current = document.createElement('link');
+            current.rel = 'icon';
+            current.type = 'image/png';
+            // Cache-busting query so the browser refetches on theme change.
+            current.href = href + '?v=' + Date.now();
+            document.head.appendChild(current);
           }
           apply();
           if (mql.addEventListener) mql.addEventListener('change', apply);
