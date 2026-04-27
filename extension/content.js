@@ -1482,13 +1482,20 @@
 
   // === KEYBOARD ===
 
-  document.addEventListener('keydown', (e) => {
-    // Escape: active → pending
-    if (e.key === 'Escape' && (state === 'active_focus' || state === 'active_mouse' || state === 'active_magnifier')) {
+  // Dedicated capture-phase Escape handler attached to window, so it wins
+  // even if the page (or a focused element) calls stopPropagation on keydown.
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (state === 'active_focus' || state === 'active_mouse' || state === 'active_magnifier') {
       e.preventDefault();
+      e.stopPropagation();
       enterPendingMode();
-      return;
     }
+  }, true);
+
+  document.addEventListener('keydown', (e) => {
+    // Escape handled above (capture phase).
+    if (e.key === 'Escape') return;
 
     // Enter in pending → activate focus without triggering element
     if (e.key === 'Enter' && state === 'pending') {
