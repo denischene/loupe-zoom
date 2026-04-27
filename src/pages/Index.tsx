@@ -210,7 +210,7 @@ const Index = () => {
               <Button
                 size="lg"
                 onClick={() => downloadFile("/loupe-extension.zip", "loupe-extension.zip")}
-                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight"
+                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight browser-dark-link-outline"
                 aria-label="Télécharger Loupe-Zoom pour Firefox"
               >
                 <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -249,7 +249,7 @@ const Index = () => {
               <Button
                 size="lg"
                 onClick={() => downloadFile("/loupe-extension-chrome.zip", "loupe-extension-chrome.zip")}
-                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight"
+                className="gap-2 w-full h-auto py-3 whitespace-normal text-center leading-tight browser-dark-link-outline"
                 aria-label="Télécharger Loupe-Zoom pour Edge et Chrome"
               >
                 <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
