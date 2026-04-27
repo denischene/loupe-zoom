@@ -41,7 +41,7 @@ const Index = () => {
           alt=""
           width={80}
           height={80}
-          className="mx-auto drop-shadow-md"
+          className="mx-auto drop-shadow-md browser-dark-invert"
         />
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
           Loupe-Zoom
