@@ -604,6 +604,7 @@
     clearFocusTimers();
     hideArrowHints();
     hidePendingIndicator();
+    stopMagnifierEventCapture();
     if (mouseMoveTimer) { clearTimeout(mouseMoveTimer); mouseMoveTimer = null; }
     focusLoupeOverride = null;
     focusTarget = null;
