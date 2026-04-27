@@ -780,6 +780,7 @@
     state = 'off';
     clearFocusTimers();
     stopSlowCapture();
+    stopMagnifierEventCapture();
     if (mouseMoveTimer) { clearTimeout(mouseMoveTimer); mouseMoveTimer = null; }
     document.body.classList.remove('loupe-active', 'loupe-pending');
     if (loupe) loupe.style.display = 'none';
