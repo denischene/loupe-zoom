@@ -1723,7 +1723,10 @@
   window.addEventListener('beforeunload', () => {
     if (state !== 'off') {
       try {
-        sessionStorage.setItem('__loupe_state', 'pending');
+        // Save the actual current mode so same-tab navigation restores it.
+        // A brand-new tab gets `start_pending` from the background script,
+        // which has no sessionStorage of its own, so it stays in pending.
+        sessionStorage.setItem('__loupe_state', state);
         sessionStorage.setItem('__loupe_zoom', String(zoom));
       } catch (e) {}
     }
