@@ -599,15 +599,69 @@
     // Start at top-left of page
     magnifierPanX = 0;
     magnifierPanY = 0;
-    magnifierLastElement = document.activeElement || null;
+
+    // Focus the first focusable element of the page
+    const firstFocusable = findFirstFocusableElement();
+    if (firstFocusable) {
+      try { firstFocusable.focus({ preventScroll: true }); } catch (e) {
+        try { firstFocusable.focus(); } catch (_) {}
+      }
+      magnifierLastElement = firstFocusable;
+    } else {
+      magnifierLastElement = document.activeElement || null;
+    }
 
     currentImg = null;
     doCapture(() => {
       updateLoupe();
+      // After initial render, move focus to any activable element at the
+      // visible center of the magnifier viewport (if present).
+      focusActivableAtMagnifierCenter();
     });
-    startSlowCapture();
+    startMagnifierEventCapture();
     notifyBackground(true);
     persistState();
+  }
+
+  // Find the first interactive/focusable element in document order.
+  function findFirstFocusableElement() {
+    const sel = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+    const list = document.querySelectorAll(sel);
+    for (const el of list) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) return el;
+    }
+    return list[0] || null;
+  }
+
+  function isActivableElement(el) {
+    if (!el) return false;
+    const tag = (el.tagName || '').toLowerCase();
+    if (['a', 'button', 'input', 'select', 'textarea', 'summary'].includes(tag)) return true;
+    if (el.hasAttribute && (el.hasAttribute('tabindex') || el.hasAttribute('onclick'))) return true;
+    const role = el.getAttribute && el.getAttribute('role');
+    if (role && ['button', 'link', 'menuitem', 'option', 'tab', 'checkbox', 'radio'].includes(role)) return true;
+    return false;
+  }
+
+  function focusActivableAtMagnifierCenter() {
+    if (state !== 'active_magnifier') return;
+    const cx = Math.min(window.innerWidth / (2 * zoom) + magnifierPanX, window.innerWidth - 1);
+    const cy = Math.min(window.innerHeight / (2 * zoom) + magnifierPanY, window.innerHeight - 1);
+    let el = document.elementFromPoint(cx, cy);
+    // Walk up to find an activable ancestor
+    let cursor = el;
+    while (cursor && cursor !== document.body) {
+      if (isActivableElement(cursor)) {
+        try { cursor.focus({ preventScroll: true }); } catch (e) {
+          try { cursor.focus(); } catch (_) {}
+        }
+        magnifierLastElement = cursor;
+        return;
+      }
+      cursor = cursor.parentElement;
+    }
+    if (el) magnifierLastElement = el;
   }
 
   function enterPendingMode() {
