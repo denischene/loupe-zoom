@@ -28,13 +28,13 @@
     "default_popup": "popup.html",
     "theme_icons": [
       {
-        "light": "icon.png",
-        "dark": "icon-light.png",
+        "light": "icon-light.png",
+        "dark": "icon.png",
         "size": 48
       },
       {
-        "light": "icon.png",
-        "dark": "icon-light.png",
+        "light": "icon-light.png",
+        "dark": "icon.png",
         "size": 128
       }
     ]
