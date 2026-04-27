@@ -7,37 +7,13 @@
     <title>Loupe-Zoom</title>
     <meta name="description" content="Loupe-Zoom : extension d'accessibilité de loupe pour Firefox, Edge et Chrome (souris et clavier, raccourci Ctrl+Maj+Z).">
     <meta name="author" content="Lovable" />
-    <script>
-      // Firefox / Chromium favicon dark-mode switcher.
-      // Browsers don't reliably re-evaluate `media` queries on <link rel="icon">.
-      // We inject a fresh <link> at runtime and remove any default to force
-      // the browser to fetch the right icon. We also re-inject on toggle to
-      // bypass favicon caches that ignore href updates on the same node.
-      (function () {
-        try {
-          // Remove any pre-existing favicon links so the browser doesn't
-          // pick a stale default before our scheme-aware one is applied.
-          var existing = document.querySelectorAll('link[rel~="icon"]');
-          existing.forEach(function (n) { n.parentNode && n.parentNode.removeChild(n); });
-
-          var mql = window.matchMedia('(prefers-color-scheme: dark)');
-          var current = null;
-          function apply() {
-            var href = (mql.matches ? '/logo-loupe-light.png' : '/logo-loupe.png');
-            if (current && current.parentNode) current.parentNode.removeChild(current);
-            current = document.createElement('link');
-            current.rel = 'icon';
-            current.type = 'image/png';
-            // Cache-busting query so the browser refetches on theme change.
-            current.href = href + '?v=' + Date.now();
-            document.head.appendChild(current);
-          }
-          apply();
-          if (mql.addEventListener) mql.addEventListener('change', apply);
-          else if (mql.addListener) mql.addListener(apply);
-        } catch (e) {}
-      })();
-    </script>
+    <!-- SVG favicon with embedded CSS prefers-color-scheme so the icon
+         automatically inverts (black ↔ white) when the browser is in dark
+         mode. Both Firefox and Chromium honor in-SVG @media queries. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- PNG fallback for browsers that don't render SVG favicons. -->
+    <link rel="alternate icon" type="image/png" href="/logo-loupe.png" media="(prefers-color-scheme: light)" />
+    <link rel="alternate icon" type="image/png" href="/logo-loupe-light.png" media="(prefers-color-scheme: dark)" />
 
     <!-- TODO: Update og:title to match your application name -->
     

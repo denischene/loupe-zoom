@@ -853,7 +853,10 @@
   function persistState() {
     try {
       if (state !== 'off') {
-        sessionStorage.setItem('__loupe_state', 'pending');
+        // Save the actual mode so that same-tab navigation restores the
+        // exact mode the user was in (Loupe souris, Focus-loupe, Agrandisseur,
+        // or Pending). beforeunload also writes this as a backup.
+        sessionStorage.setItem('__loupe_state', state);
         sessionStorage.setItem('__loupe_zoom', String(zoom));
       }
     } catch (e) {}
