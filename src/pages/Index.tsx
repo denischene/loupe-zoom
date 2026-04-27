@@ -114,7 +114,7 @@ const Index = () => {
             {/* Mode Focus-loupe */}
             <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
               <h3 className="font-semibold flex items-center gap-2 text-base" style={{ color: DARK_BROWN }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={DARK_BROWN} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="browser-dark-invert" style={{ color: DARK_BROWN }}>
                   <rect x="2" y="5" width="20" height="14" rx="2.5"/>
                   <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M7 17h10"/>
                 </svg>
@@ -152,9 +152,9 @@ const Index = () => {
             {/* Mode Agrandisseur */}
             <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
               <h3 className="font-semibold flex items-center gap-2 text-base" style={{ color: DARK_BROWN }}>
-                <svg width="24" height="18" viewBox="0 0 28 20" fill="none" stroke={DARK_BROWN} strokeWidth="2" aria-hidden="true">
+                <svg width="24" height="18" viewBox="0 0 28 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="browser-dark-invert" style={{ color: DARK_BROWN }}>
                   <rect x="1.5" y="1.5" width="25" height="17" rx="3.5"/>
-                  <text x="14" y="15" textAnchor="middle" fontFamily="system-ui,sans-serif" fontSize="13" fontWeight="800" fill={DARK_BROWN} stroke="none">A</text>
+                  <text x="14" y="15" textAnchor="middle" fontFamily="system-ui,sans-serif" fontSize="13" fontWeight="800" fill="currentColor" stroke="none">A</text>
                 </svg>
                 Mode Agrandisseur
               </h3>

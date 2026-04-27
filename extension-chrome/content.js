@@ -369,8 +369,28 @@
       ['change', onChange, true, document]
     );
     try {
-      magnifierMutationObserver = new MutationObserver(() => {
-        scheduleMagnifierCapture(150);
+      // IDs/classes that belong to the loupe overlay itself — mutations on these
+      // must NOT trigger a recapture (otherwise capture → hide loupe → mutation
+      // → recapture creates an infinite flicker loop).
+      const isOurNode = (node) => {
+        if (!node || node.nodeType !== 1) return false;
+        const id = node.id || '';
+        if (id === 'loupe-overlay' || id === 'loupe-zoom-label' ||
+            id === 'loupe-pending-icon' || id === 'loupe-cursor-ring') return true;
+        const cls = (node.className && typeof node.className === 'string') ? node.className : '';
+        if (cls.indexOf('loupe-') !== -1) return true;
+        if (node.closest && node.closest('#loupe-overlay, .loupe-page-edge-bar, .loupe-arrow-hint')) return true;
+        return false;
+      };
+      magnifierMutationObserver = new MutationObserver((mutations) => {
+        // Ignore mutations that come from our own overlay/indicator nodes.
+        for (const m of mutations) {
+          if (isOurNode(m.target)) continue;
+          // Also ignore body class toggles we add ourselves (loupe-active/pending)
+          if (m.type === 'attributes' && m.target === document.body && m.attributeName === 'class') continue;
+          scheduleMagnifierCapture(200);
+          return;
+        }
       });
       magnifierMutationObserver.observe(document.body, {
         childList: true,
@@ -615,6 +635,13 @@
   function enterActiveMouseMode() {
     captureInitialBrowserZoom();
     clearPreviousModeArtifacts();
+    // Prevent the still-focused element (from a previous focus mode) from
+    // immediately re-triggering focus mode via the global focusin handler.
+    suppressFocusTransitionUntil = Date.now() + 800;
+    try {
+      const ae = document.activeElement;
+      if (ae && ae !== document.body && typeof ae.blur === 'function') ae.blur();
+    } catch (e) {}
     state = 'active_mouse';
     zoom = mouseZoom;
     createLoupe();
@@ -1625,4 +1652,17 @@
   // === INIT ===
   loadZoomSettings();
   restoreState();
+
+  // === THEME → TOOLBAR ICON (Chromium only) ===
+  // Chromium MV3 ignores manifest "theme_icons", so notify the background to
+  // switch icon.png (dark-on-light) ↔ icon-light.png (light-on-dark).
+  try {
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const sendTheme = () => {
+      try { browser.runtime.sendMessage({ type: 'set_theme_icon', dark: mql.matches }); } catch (e) {}
+    };
+    sendTheme();
+    if (mql.addEventListener) mql.addEventListener('change', sendTheme);
+    else if (mql.addListener) mql.addListener(sendTheme);
+  } catch (e) {}
 })();
