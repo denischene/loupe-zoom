@@ -122,14 +122,17 @@
       const g = parseInt(localStorage.getItem('__loupe_magnifier_zoom'), 10);
       if (g >= MAGNIFIER_ZOOM_MIN && g <= MAGNIFIER_ZOOM_MAX) magnifierZoom = g;
     } catch (e) {}
-    // Also load from extension storage
+    // Also load from extension storage (returns a promise so callers can await
+    // freshness before activating a mode from the popup).
     try {
-      browser.storage.local.get(['mouseZoom', 'focusZoom', 'magnifierZoom']).then((data) => {
+      return browser.storage.local.get(['mouseZoom', 'focusZoom', 'magnifierZoom']).then((data) => {
         if (data.mouseZoom >= MOUSE_ZOOM_MIN && data.mouseZoom <= MOUSE_ZOOM_MAX) mouseZoom = data.mouseZoom;
         if (data.focusZoom >= FOCUS_ZOOM_MIN && data.focusZoom <= FOCUS_ZOOM_MAX) focusZoom = data.focusZoom;
         if (data.magnifierZoom >= MAGNIFIER_ZOOM_MIN && data.magnifierZoom <= MAGNIFIER_ZOOM_MAX) magnifierZoom = data.magnifierZoom;
-      });
-    } catch (e) {}
+      }).catch(() => {});
+    } catch (e) {
+      return Promise.resolve();
+    }
   }
 
   function getActiveZoom() {
@@ -1272,13 +1275,24 @@
   function isActivatableElement(el) {
     if (!el || el === document || el === document.body) return false;
     const tag = el.tagName;
-    return tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' ||
-      tag === 'SELECT' || tag === 'TEXTAREA' || el.hasAttribute('tabindex') ||
-      el.hasAttribute('onclick') || el.getAttribute('role') === 'button' ||
-      el.getAttribute('role') === 'link' || el.getAttribute('role') === 'checkbox' ||
-      el.getAttribute('role') === 'menuitem' || !!el.closest('a, button') ||
-      tag === 'IMG' || tag === 'VIDEO' || tag === 'IFRAME' || tag === 'OBJECT' ||
-      tag === 'EMBED' || el.contentEditable === 'true';
+    // Only "truly activable" elements switch to Focus-loupe.
+    // IMG/VIDEO/IFRAME/OBJECT/EMBED and bare [tabindex]/contenteditable do NOT
+    // qualify any more — clicking them keeps Loupe souris and shows a pending
+    // focus indicator instead.
+    if (tag === 'A' && el.href) return true;
+    if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA') return true;
+    if (tag === 'INPUT') {
+      const t = (el.type || '').toLowerCase();
+      if (t === 'hidden') return false;
+      return true;
+    }
+    if (tag === 'SUMMARY' || tag === 'LABEL') return true;
+    if (el.hasAttribute('onclick')) return true;
+    const role = el.getAttribute && el.getAttribute('role');
+    if (role && ['button','link','checkbox','radio','switch','menuitem','tab','option'].indexOf(role) !== -1) return true;
+    const closest = el.closest && el.closest('a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="tab"]');
+    if (closest) return true;
+    return false;
   }
 
   function onFocusChange(e) {
@@ -1294,7 +1308,15 @@
 
     if (state !== 'active_mouse' && state !== 'active_focus') return;
     if (Date.now() < suppressFocusTransitionUntil) return;
-    if (!isActivatableElement(el)) return;
+    if (!isActivatableElement(el)) {
+      // In Loupe souris, focusing a non-activable element must NOT switch to
+      // Focus-loupe. Just show a pending focus indicator on the element and
+      // keep the current mode.
+      if (state === 'active_mouse' && el && el !== document.body) {
+        try { showPendingIndicator(el); } catch (err) {}
+      }
+      return;
+    }
 
     clearFocusTimers();
     stopSlowCapture();
@@ -1599,32 +1621,36 @@
       return;
     }
     if (msg.type === 'activate_mouse') {
-      if (state === 'off') loadZoomSettings();
-      enterActiveMouseMode();
+      // Always reload latest user-chosen zoom values from storage so popup
+      // activation uses the current selection (not a stale in-memory value).
+      Promise.resolve(loadZoomSettings()).then(() => {
+        enterActiveMouseMode();
+      });
       return;
     }
     if (msg.type === 'activate_focus') {
-      if (state === 'off') loadZoomSettings();
-      let el = document.activeElement;
-      if (!el || el === document.body || el === document || el === document.documentElement) {
-        // Simulate a Tab press: focus the first focusable element in the page
-        const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
-        const candidates = Array.from(document.querySelectorAll(focusableSelector)).filter((node) => {
-          if (!(node instanceof HTMLElement)) return false;
-          if (node.offsetParent === null && node.tagName !== 'BODY') return false;
-          const rect = node.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        });
-        if (candidates.length > 0) {
-          try { candidates[0].focus({ preventScroll: false }); } catch (err) {}
-          el = document.activeElement;
+      Promise.resolve(loadZoomSettings()).then(() => {
+        let el = document.activeElement;
+        if (!el || el === document.body || el === document || el === document.documentElement) {
+          // Simulate a Tab press: focus the first focusable element in the page
+          const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+          const candidates = Array.from(document.querySelectorAll(focusableSelector)).filter((node) => {
+            if (!(node instanceof HTMLElement)) return false;
+            if (node.offsetParent === null && node.tagName !== 'BODY') return false;
+            const rect = node.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+          });
+          if (candidates.length > 0) {
+            try { candidates[0].focus({ preventScroll: false }); } catch (err) {}
+            el = document.activeElement;
+          }
         }
-      }
-      if (el && el !== document.body && el !== document && el !== document.documentElement) {
-        enterActiveFocusMode(el);
-      } else {
-        enterPendingMode();
-      }
+        if (el && el !== document.body && el !== document && el !== document.documentElement) {
+          enterActiveFocusMode(el);
+        } else {
+          enterPendingMode();
+        }
+      });
       return;
     }
     if (msg.type === 'deactivate') {
@@ -1636,10 +1662,9 @@
       return;
     }
     if (msg.type === 'activate_magnifier') {
-      if (state === 'off') {
-        loadZoomSettings();
-      }
-      enterMagnifierMode();
+      Promise.resolve(loadZoomSettings()).then(() => {
+        enterMagnifierMode();
+      });
       return;
     }
     if (msg.type === 'update_zoom_setting') {
