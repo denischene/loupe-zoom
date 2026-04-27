@@ -32,9 +32,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["<all_urls>", "file:///*"],
       "js": ["browser-polyfill.js", "content.js"],
       "css": ["loupe.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["loupe.css"],
+      "matches": ["<all_urls>"]
     }
   ],
   "icons": {
