@@ -47,9 +47,9 @@ const Index = () => {
           Loupe-Zoom
         </h1>
         <p className="text-lg max-w-xl mx-auto" style={{ color: DARK_BROWN }}>
-          Extension Firefox, Edge et Chrome de loupe souris et loupe clavier (
+          Extension Firefox, Edge et Chrome de loupe souris et clavier (
           <kbd className="px-2 py-0.5 rounded bg-muted text-foreground text-sm font-mono border border-border">
-            Ctrl+Maj+Z
+            Ctrl+Maj.+Z
           </kbd>
           ).
         </p>
@@ -104,10 +104,6 @@ const Index = () => {
                 <li>Cliquer sur l'icône Loupe dans la barre d'outils pour activer/désactiver la loupe.</li>
                 <li>Clic droit pour faire disparaître la loupe. Elle reste disponible au bout de la souris. Il suffit de faire un 1<sup>er</sup> clic pour la faire réapparaître.</li>
                 <li>Un 2<sup>e</sup> clic depuis la loupe visible valide l'élément (hyperlien, bouton…)</li>
-                <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Ctrl+molette haut-bas</kbd>{" "}
-                  permet de changer de niveau de zoom.
-                </li>
               </ol>
             </div>
 
@@ -135,17 +131,6 @@ const Index = () => {
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Entrée</kbd>{" "}
                   le valide.
                 </li>
-                <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>+</kbd> et{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>-</kbd>{" "}
-                  pour changer le niveau de zoom.
-                </li>
-                <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Échap.</kbd>{" "}
-                  pour faire disparaître le Focus-loupe.{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Entrée</kbd>{" "}
-                  pour le faire réapparaître.
-                </li>
               </ol>
             </div>
 
@@ -164,7 +149,7 @@ const Index = () => {
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>▼</kbd>{" "}
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>◄</kbd>{" "}
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>►</kbd>{" "}
-                  pour naviguer dans la page.
+                  ou souris pour naviguer dans la page.
                 </li>
                 <li>
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Ctrl</kbd>+
@@ -178,19 +163,34 @@ const Index = () => {
                   <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Entrée</kbd>{" "}
                   pour valider un élément.
                 </li>
-                <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>+</kbd> et{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>-</kbd>{" "}
-                  pour changer le niveau de zoom.
-                </li>
-                <li>
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Échap.</kbd>{" "}
-                  pour faire disparaître l'agrandisseur et{" "}
-                  <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Ctrl+Maj+Z</kbd>{" "}
-                  pour le faire réapparaître.
-                </li>
               </ol>
             </div>
+          </div>
+
+          {/* Commun aux trois modes */}
+          <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3 mt-2">
+            <h3 className="font-semibold text-base" style={{ color: DARK_BROWN }}>
+              Commun aux trois modes
+            </h3>
+            <ol start={4} className="list-decimal list-inside space-y-2 text-sm" style={{ color: DARK_BROWN }}>
+              <li>
+                <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Ctrl+molette haut-bas</kbd>{" "}
+                ou{" "}
+                <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>+</kbd> et{" "}
+                <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>-</kbd>{" "}
+                pour changer le niveau de zoom.
+              </li>
+              <li>
+                <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Échap.</kbd>{" "}
+                pour faire disparaître la loupe.{" "}
+                <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Entrée</kbd>{" "}
+                pour la faire réapparaître.
+              </li>
+              <li>
+                <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Ctrl+Maj+Z</kbd>{" "}
+                pour fermer l'extension (ou la lancer).
+              </li>
+            </ol>
           </div>
         </section>
 
