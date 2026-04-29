@@ -263,18 +263,11 @@ const Index = () => {
               <div className="text-sm space-y-2 text-left bg-background rounded-lg border p-4" style={{ color: DARK_BROWN }}>
                 <p className="font-semibold" style={{ color: DARK_BROWN }}>Installation :</p>
                 <ol className="list-decimal list-inside space-y-1.5">
-                  <li>Téléchargez l'archive <code className="text-primary">.zip</code> et décompressez-la dans un dossier.</li>
+                  <li>Décompressez l'archive <code className="text-primary">.zip</code> dans un dossier.</li>
                   <li>Dans Chrome ou Edge, allez dans <strong>Extensions / Gérer les extensions</strong>.</li>
-                  <li>
-                    Actionnez le bouton « Charger l'extension décompressée ». Si vous ne trouvez pas ce bouton en haut de page, c'est que le bouton <strong>Mode développeur</strong> a été désactivé (il se trouve en bas à gauche de la page).
-                  </li>
-                  <li>Choisissez le dossier dans lequel vous avez décompressé l'archive. Ne pas rentrer dans le dossier, sélectionnez juste le dossier.</li>
-                  <li>Cliquez sur le bouton « Extension » de la barre du navigateur et décochez l'œil sur la ligne Loupe-Zoom.</li>
-                  <li>
-                    Ouvrez une page web et cliquez sur le bouton Loupe-Zoom, ou utilisez le raccourci{" "}
-                    <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Ctrl+Maj+Z</kbd>{" "}
-                    pour lancer l'extension.
-                  </li>
+                  <li>Actionnez le bouton « Charger l'extension décompressée ».</li>
+                  <li>Choisissez le dossier dans lequel vous avez décompressé l'archive (ne pas rentrer dans le dossier, sélectionnez juste le dossier).</li>
+                  <li>Cliquez sur le bouton « Extension » de la barre du navigateur et décochez l'œil ou l'épingle sur la ligne Loupe-Zoom pour l'ajouter à la barre.</li>
                 </ol>
               </div>
             </article>
