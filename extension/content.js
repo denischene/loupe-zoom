@@ -765,6 +765,7 @@
     currentImg = null;
     doCapture(() => { updateLoupe(); });
     startSlowCapture();
+    startMagnifierEventCapture();
     notifyBackground(true);
     persistState();
   }
