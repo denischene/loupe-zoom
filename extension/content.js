@@ -54,10 +54,13 @@
   // Magnifier state
   let magnifierPanX = 0, magnifierPanY = 0;
   let magnifierLastElement = null;
-  // Magnifier mouse-drag panning state
-  let magnifierDragging = false;
-  let magnifierDragLastX = 0, magnifierDragLastY = 0;
-  let magnifierDragMoved = false;
+  // Magnifier mouse panning state (cursor at viewport edge → page scroll)
+  let magnifierEdgeScrollTimer = null;
+
+  // While in pending, anchor the virtual cursor to the spot where the
+  // previous mode left off (e.g. the focused element), until the OS mouse
+  // really moves a few pixels. { realX, realY, virtualX, virtualY }
+  let pendingMouseAnchor = null;
 
   // Remember which active mode we left when entering pending, so that exiting
   // pending (Enter or left-click) restores THAT mode, not always Loupe souris.
