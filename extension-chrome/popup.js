@@ -187,4 +187,31 @@
     }
     window.close();
   });
+
+  // Debug mode toggle
+  const toggleDebugBtn = document.getElementById('toggle-debug');
+  let debugOn = false;
+  function updateDebugBtn() {
+    if (debugOn) {
+      toggleDebugBtn.textContent = '🐞 ✔ Désactiver le mode débogage';
+      toggleDebugBtn.classList.add('deactivate');
+    } else {
+      toggleDebugBtn.textContent = '🐞 Activer le mode débogage';
+      toggleDebugBtn.classList.remove('deactivate');
+    }
+  }
+  browser.storage.local.get(['loupeDebug']).then((d) => {
+    debugOn = !!(d && d.loupeDebug);
+    updateDebugBtn();
+  });
+  toggleDebugBtn.addEventListener('click', () => {
+    debugOn = !debugOn;
+    updateDebugBtn();
+    try { browser.storage.local.set({ loupeDebug: debugOn }); } catch (e) {}
+    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+      if (tabs[0]) {
+        browser.tabs.sendMessage(tabs[0].id, { type: 'set_debug', value: debugOn }).catch(() => {});
+      }
+    });
+  });
 })();
