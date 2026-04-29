@@ -957,6 +957,7 @@
   function restoreModeFromPending(focusedEl) {
     const target = modeBeforePending;
     modeBeforePending = null;
+    pendingMouseAnchor = null;
     if (target === 'active_focus') {
       const el = focusedEl || document.activeElement;
       if (el && el !== document.body && el !== document && el !== document.documentElement) {
