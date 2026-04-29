@@ -10,6 +10,9 @@
   let LOUPE_DEBUG = false;
   let _dbgBadge = null;
   let _dbgLastMoveLog = 0;
+  let _dbgLastUpdateLog = 0;
+  let _dbgLastCaptureAt = 0;
+  let _dbgLastInOverlay = false;
   function dbgDescribeEl(el) {
     if (!el) return 'null';
     try {
@@ -374,6 +377,8 @@
   function doCapture(cb) {
     if (captureInFlight || (state !== 'active_mouse' && state !== 'active_focus' && state !== 'active_magnifier')) return;
     captureInFlight = true;
+    const _dbgT0 = Date.now();
+    if (LOUPE_DEBUG) dbgLog(`CAPTURE start state=${state} sinceLast=${_dbgLastCaptureAt ? (_dbgT0 - _dbgLastCaptureAt) + 'ms' : 'first'}`);
 
     if (loupe) loupe.style.visibility = 'hidden';
 
@@ -387,19 +392,24 @@
             const img = new Image();
             img.onload = () => {
               currentImg = dataUrl;
+              _dbgLastCaptureAt = Date.now();
+              if (LOUPE_DEBUG) dbgLog(`CAPTURE done in ${_dbgLastCaptureAt - _dbgT0}ms size=${img.naturalWidth}x${img.naturalHeight}`);
               if (loupe) loupe.style.visibility = 'visible';
               updateLoupe();
               if (cb) cb();
             };
             img.onerror = () => {
+              if (LOUPE_DEBUG) dbgLog('CAPTURE image load error');
               if (loupe) loupe.style.visibility = 'visible';
             };
             img.src = dataUrl;
           } else {
+            if (LOUPE_DEBUG) dbgLog('CAPTURE returned no dataUrl');
             if (loupe) loupe.style.visibility = 'visible';
           }
-        }).catch(() => {
+        }).catch((err) => {
           captureInFlight = false;
+          if (LOUPE_DEBUG) dbgLog('CAPTURE rejected', err && err.message);
           if (loupe) loupe.style.visibility = 'visible';
         });
       });
@@ -551,6 +561,20 @@
     loupe.style.backgroundImage = 'url(' + currentImg + ')';
     loupe.style.backgroundSize = bgW + 'px ' + bgH + 'px';
     loupe.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
+
+    if (LOUPE_DEBUG) {
+      const now = Date.now();
+      if (now - _dbgLastUpdateLog > 250) {
+        _dbgLastUpdateLog = now;
+        let rect = null;
+        try { rect = loupe.getBoundingClientRect(); } catch (e) {}
+        const rectStr = rect ? `rect=(${Math.round(rect.left)},${Math.round(rect.top)} ${Math.round(rect.width)}x${Math.round(rect.height)})` : 'rect=?';
+        const ageStr = _dbgLastCaptureAt ? `imgAge=${now - _dbgLastCaptureAt}ms` : 'imgAge=?';
+        const cs = loupe.ownerDocument && loupe.ownerDocument.defaultView ? loupe.ownerDocument.defaultView.getComputedStyle(loupe) : null;
+        const csStr = cs ? `z=${cs.zIndex} vis=${cs.visibility} disp=${cs.display}` : '';
+        dbgLog(`UPDATE pos=(${Math.round(loupeLeft)},${Math.round(loupeTop)}) src=(${Math.round(posX)},${Math.round(posY)}) ${rectStr} ${csStr} ${ageStr}`);
+      }
+    }
   }
 
   function scheduleUpdate() {
@@ -569,6 +593,19 @@
     mouseY = e.clientY;
     if (LOUPE_DEBUG) {
       const now = Date.now();
+      // Detect overlay enter/exit transitions and force-recapture
+      try {
+        const elNow = getDeepElementFromPoint(e.clientX, e.clientY);
+        const inOv = !!(elNow && elNow.closest && elNow.closest('[role="dialog"],[role="listbox"],[role="menu"],[aria-modal="true"]'));
+        if (inOv !== _dbgLastInOverlay) {
+          _dbgLastInOverlay = inOv;
+          dbgLog(`>>> OVERLAY TRANSITION: ${inOv ? 'ENTER' : 'EXIT'} at (${e.clientX},${e.clientY}) target=${dbgDescribeEl(elNow)} -- forcing recapture`);
+          // Force a fresh capture so the loupe content reflects the new modal
+          if (state === 'active_mouse' || state === 'active_focus') {
+            doCapture(() => updateLoupe());
+          }
+        }
+      } catch (err) {}
       if (now - _dbgLastMoveLog > 200) {
         _dbgLastMoveLog = now;
         let el = null;
