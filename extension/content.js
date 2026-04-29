@@ -600,7 +600,7 @@
         focusZoom = newZoom;
         zoom = newZoom;
         // Find a focusable element near the mouse position
-        let elAtMouse = document.elementFromPoint(mouseX, mouseY);
+        let elAtMouse = getDeepElementFromPoint(mouseX, mouseY);
         let focusable = elAtMouse;
         while (focusable && focusable !== document.body && !isActivatableElement(focusable)) {
           focusable = focusable.parentElement;
@@ -1716,11 +1716,7 @@
     const cy = magnifierPanY + window.innerHeight / (2 * zoom);
     const x = Math.max(0, Math.min(window.innerWidth - 1, cx));
     const y = Math.max(0, Math.min(window.innerHeight - 1, cy));
-    // Temporarily hide the loupe so elementFromPoint sees the underlying page
-    const prevDisplay = loupe ? loupe.style.display : '';
-    if (loupe) loupe.style.display = 'none';
-    const el = document.elementFromPoint(x, y);
-    if (loupe) loupe.style.display = prevDisplay;
+    const el = getDeepElementFromPoint(x, y);
     if (!el) return;
     magnifierLastElement = el;
     const target = findActivableAncestor(el) || el;
