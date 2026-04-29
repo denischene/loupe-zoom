@@ -47,9 +47,9 @@ const Index = () => {
           Loupe-Zoom
         </h1>
         <p className="text-lg max-w-xl mx-auto" style={{ color: DARK_BROWN }}>
-          Extension Firefox, Edge et Chrome de loupe souris et loupe clavier (
+          Extension Firefox, Edge et Chrome de loupe souris et clavier (
           <kbd className="px-2 py-0.5 rounded bg-muted text-foreground text-sm font-mono border border-border">
-            Ctrl+Maj+Z
+            Ctrl+Maj.+Z
           </kbd>
           ).
         </p>
