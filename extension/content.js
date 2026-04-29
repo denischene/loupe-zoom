@@ -2054,7 +2054,16 @@
       return;
     }
     if (msg.type === 'get_state') {
-      sendResponse({ state });
+      sendResponse({ state, debug: LOUPE_DEBUG });
+      return;
+    }
+    if (msg.type === 'set_debug') {
+      setDebugMode(!!msg.value);
+      sendResponse({ debug: LOUPE_DEBUG });
+      return;
+    }
+    if (msg.type === 'get_debug') {
+      sendResponse({ debug: LOUPE_DEBUG });
       return;
     }
     if (msg.type === 'activate_magnifier') {
