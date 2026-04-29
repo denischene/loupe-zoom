@@ -990,6 +990,8 @@
       try { sessionStorage.setItem('__loupe_last_mode', state); } catch (e) {}
     }
     state = 'off';
+    pendingMouseAnchor = null;
+    modeBeforePending = null;
     clearFocusTimers();
     stopSlowCapture();
     stopMagnifierEventCapture();
