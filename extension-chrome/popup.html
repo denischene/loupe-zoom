@@ -195,6 +195,34 @@
       color: var(--shortcut-fg);
       line-height: 1.6;
     }
+    .global-toggle-wrap {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--section-border);
+    }
+    .activate-btn.neutral {
+      background: var(--section-border);
+      border-color: var(--section-border);
+      color: var(--hint-fg);
+      cursor: not-allowed;
+    }
+    .activate-btn.neutral:hover {
+      background: var(--section-border);
+      border-color: var(--section-border);
+      color: var(--hint-fg);
+    }
+    @media (prefers-color-scheme: dark) {
+      .activate-btn.neutral {
+        background: transparent;
+        border-color: var(--select-border);
+        color: var(--subtitle-fg);
+      }
+      .activate-btn.neutral:hover {
+        background: transparent;
+        border-color: var(--select-border);
+        color: var(--subtitle-fg);
+      }
+    }
     kbd {
       background: var(--kbd-bg);
       border: 1px solid var(--kbd-border);
@@ -261,6 +289,10 @@
   <div class="shortcut">
     <kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd> Activer/Désactiver<br>
     <kbd>Entrée</kbd> Afficher la loupe · <kbd>Échap.</kbd> Masquer
+  </div>
+
+  <div class="global-toggle-wrap">
+    <button class="activate-btn" id="toggle-extension">Activer l’extension</button>
   </div>
 
   <script src="browser-polyfill.js"></script>
