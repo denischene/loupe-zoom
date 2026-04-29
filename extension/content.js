@@ -570,10 +570,32 @@
 
     const base = baseZoom();
 
+    // Helper: when the browser page-zoom (body.style.zoom) changes during a
+    // mode transition, the layout reflows asynchronously. If we capture the
+    // viewport before that reflow settles, we get a stale image rendered at
+    // the OLD zoom but used with the NEW magnification factor → the loupe
+    // looks dramatically over-zoomed. We therefore hide any current loupe,
+    // invalidate the cached image, and defer the mode entry by a few frames
+    // so the new layout is in place when the recapture happens.
+    function deferModeTransition(fn) {
+      try { if (loupe) loupe.style.visibility = 'hidden'; } catch (e) {}
+      currentImg = null;
+      // Two rAFs + a small timeout to let body.style.zoom reflow finish.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            try { if (loupe) loupe.style.visibility = 'visible'; } catch (e) {}
+            fn();
+          }, 80);
+        });
+      });
+    }
+
     // --- Upward transitions ---
     if (delta > 0) {
       if (state === 'active_mouse' && newZoom > MOUSE_ZOOM_MAX) {
         // Mouse ×4 → Focus ×5: bump browser zoom to base + 10 (if lower)
+        const zoomChanged = getCurrentPageZoomPercent() < base + 10;
         ensurePageZoomAtLeast(base + 10);
         focusZoom = newZoom;
         zoom = newZoom;
@@ -593,23 +615,28 @@
             focusable.focus({ preventScroll: true });
           } catch (e) {}
         }
-        enterActiveFocusMode(focusable || document.activeElement);
-        showZoomIndicator();
+        const target = focusable || document.activeElement;
+        const enter = () => { enterActiveFocusMode(target); showZoomIndicator(); };
+        if (zoomChanged) deferModeTransition(enter); else enter();
         return;
       }
       if (state === 'active_focus' && newZoom > FOCUS_ZOOM_MAX) {
         // Focus ×9 → Magnifier ×10: bump browser zoom to base + 30 (if lower)
+        const zoomChanged = getCurrentPageZoomPercent() < base + 30;
         ensurePageZoomAtLeast(base + 30);
         magnifierZoom = newZoom;
         zoom = newZoom;
         magnifierPanX = Math.max(0, (state === 'active_focus' ? focusX : mouseX) - window.innerWidth / (2 * newZoom));
         magnifierPanY = Math.max(0, (state === 'active_focus' ? focusY : mouseY) - window.innerHeight / (2 * newZoom));
-        enterMagnifierMode();
-        zoom = newZoom;
-        magnifierZoom = newZoom;
-        applyLoupeSize();
-        updateLoupe();
-        showZoomIndicator();
+        const enter = () => {
+          enterMagnifierMode();
+          zoom = newZoom;
+          magnifierZoom = newZoom;
+          applyLoupeSize();
+          updateLoupe();
+          showZoomIndicator();
+        };
+        if (zoomChanged) deferModeTransition(enter); else enter();
         return;
       }
     }
@@ -618,6 +645,7 @@
     if (delta < 0) {
       if (state === 'active_magnifier' && newZoom < MAGNIFIER_ZOOM_MIN) {
         // Magnifier ×8 → Focus ×7: set browser zoom to base + 10
+        const zoomChanged = getCurrentPageZoomPercent() !== base + 10;
         setPageZoomPercent(base + 10);
         focusZoom = newZoom;
         zoom = newZoom;
@@ -627,11 +655,14 @@
           Math.min(cx, window.innerWidth - 1),
           Math.min(cy, window.innerHeight - 1)
         );
-        enterActiveFocusMode(elAt || document.activeElement);
-        zoom = newZoom;
-        focusZoom = newZoom;
-        applyLoupeSize();
-        showZoomIndicator();
+        const enter = () => {
+          enterActiveFocusMode(elAt || document.activeElement);
+          zoom = newZoom;
+          focusZoom = newZoom;
+          applyLoupeSize();
+          showZoomIndicator();
+        };
+        if (zoomChanged) deferModeTransition(enter); else enter();
         return;
       }
       if (state === 'active_focus' && newZoom < FOCUS_ZOOM_MIN) {
@@ -639,6 +670,7 @@
       }
       if (state === 'active_focus' && newZoom <= MOUSE_ZOOM_MAX - 1) {
         // Focus ×4 → Mouse ×3: restore browser zoom to base (initial)
+        const zoomChanged = getCurrentPageZoomPercent() !== base;
         setPageZoomPercent(base);
         mouseZoom = newZoom;
         zoom = newZoom;
@@ -650,11 +682,14 @@
             mouseY = rect.top + rect.height / 2;
           } catch (e) {}
         }
-        enterActiveMouseMode();
-        zoom = newZoom;
-        mouseZoom = newZoom;
-        applyLoupeSize();
-        showZoomIndicator();
+        const enter = () => {
+          enterActiveMouseMode();
+          zoom = newZoom;
+          mouseZoom = newZoom;
+          applyLoupeSize();
+          showZoomIndicator();
+        };
+        if (zoomChanged) deferModeTransition(enter); else enter();
         return;
       }
     }
