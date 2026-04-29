@@ -567,6 +567,19 @@
   function onMove(e) {
     mouseX = e.clientX;
     mouseY = e.clientY;
+    if (LOUPE_DEBUG) {
+      const now = Date.now();
+      if (now - _dbgLastMoveLog > 200) {
+        _dbgLastMoveLog = now;
+        let el = null;
+        try { el = getDeepElementFromPoint(e.clientX, e.clientY); } catch (err) {}
+        const eventTarget = e.target;
+        const phaseInfo = `phase=${e.eventPhase} type=${e.type} target=${dbgDescribeEl(eventTarget)}`;
+        const overlayInfo = `deep=${dbgDescribeEl(el)}`;
+        const sameAsTarget = el === eventTarget ? 'same-as-target' : 'DIFFERENT-from-target';
+        dbgLog(`mousemove @${e.clientX},${e.clientY} state=${state} | ${phaseInfo} | ${overlayInfo} | ${sameAsTarget}`);
+      }
+    }
 
     if (state === 'active_focus') {
       // Mouse movement alone keeps the user in focus-loupe (no pending switch).
