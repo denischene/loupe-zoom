@@ -1992,6 +1992,16 @@
     try { toggle(); } catch (err) {}
   }, true);
 
+  // Ctrl+Shift+D → toggle Loupe debug mode
+  window.addEventListener('keydown', (e) => {
+    const isDbgCombo = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd' || e.code === 'KeyD');
+    if (!isDbgCombo) return;
+    if (isEditableTarget(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDebugMode(!LOUPE_DEBUG);
+  }, true);
+
   // === MESSAGES FROM BACKGROUND / POPUP ===
 
   browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
