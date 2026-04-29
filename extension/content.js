@@ -1121,6 +1121,7 @@
     updateLoupe();
   }
 
+  function handleArrowPan(direction, fine) {
     if (state === 'active_focus') {
       enterManualScroll();
       startFocusInactivityTimer();
