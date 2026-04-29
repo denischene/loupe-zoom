@@ -5,6 +5,7 @@
   const activateMouseBtn = document.getElementById('activate-mouse');
   const activateFocusBtn = document.getElementById('activate-focus');
   const activateMagnifierBtn = document.getElementById('activate-magnifier');
+  const toggleExtensionBtn = document.getElementById('toggle-extension');
 
   // Populate selects
   for (let i = 2; i <= 4; i++) {
@@ -65,6 +66,19 @@
     } else {
       activateMagnifierBtn.textContent = "Activer l'Agrandisseur";
       activateMagnifierBtn.classList.remove('deactivate');
+    }
+
+    toggleExtensionBtn.classList.remove('deactivate', 'neutral');
+    toggleExtensionBtn.disabled = false;
+    if (state === 'pending') {
+      toggleExtensionBtn.textContent = CHECK + 'Désactiver l’extension';
+      toggleExtensionBtn.classList.add('deactivate');
+    } else if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier') {
+      toggleExtensionBtn.textContent = CHECK + 'Extension active';
+      toggleExtensionBtn.classList.add('neutral');
+      toggleExtensionBtn.disabled = true;
+    } else {
+      toggleExtensionBtn.textContent = 'Activer l’extension';
     }
   }
 
@@ -147,5 +161,17 @@
   });
   magnifierSelect.addEventListener('change', () => {
     saveAndBroadcast('magnifierZoom', parseInt(magnifierSelect.value, 10));
+  });
+
+  toggleExtensionBtn.addEventListener('click', async () => {
+    if (currentState === 'active_mouse' || currentState === 'active_focus' || currentState === 'active_magnifier') return;
+    if (currentState === 'pending') {
+      await sendToActiveTab({ type: 'deactivate' });
+      updateButtons('off');
+    } else {
+      await sendToActiveTab({ type: 'toggle_loupe' });
+      updateButtons('pending');
+    }
+    window.close();
   });
 })();

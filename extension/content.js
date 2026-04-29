@@ -600,7 +600,7 @@
         focusZoom = newZoom;
         zoom = newZoom;
         // Find a focusable element near the mouse position
-        let elAtMouse = document.elementFromPoint(mouseX, mouseY);
+        let elAtMouse = getDeepElementFromPoint(mouseX, mouseY);
         let focusable = elAtMouse;
         while (focusable && focusable !== document.body && !isActivatableElement(focusable)) {
           focusable = focusable.parentElement;
@@ -857,6 +857,26 @@
     return best;
   }
 
+  function getDeepElementFromPoint(x, y) {
+    let el = null;
+    try {
+      if (loupe) loupe.style.display = 'none';
+      el = document.elementFromPoint(x, y);
+      while (el && el.shadowRoot && typeof el.shadowRoot.elementFromPoint === 'function') {
+        const rect = el.getBoundingClientRect();
+        const nested = el.shadowRoot.elementFromPoint(x - rect.left, y - rect.top);
+        if (!nested || nested === el) break;
+        el = nested;
+      }
+    } catch (e) {}
+    finally {
+      if (loupe && (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier')) {
+        loupe.style.display = 'block';
+      }
+    }
+    return el;
+  }
+
   // Find the first interactive/focusable element in document order.
   function findFirstFocusableElement() {
     const sel = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
@@ -882,7 +902,7 @@
     if (state !== 'active_magnifier') return;
     const cx = Math.min(window.innerWidth / (2 * zoom) + magnifierPanX, window.innerWidth - 1);
     const cy = Math.min(window.innerHeight / (2 * zoom) + magnifierPanY, window.innerHeight - 1);
-    let el = document.elementFromPoint(cx, cy);
+    let el = getDeepElementFromPoint(cx, cy);
     // Walk up to find an activable ancestor
     let cursor = el;
     while (cursor && cursor !== document.body) {
@@ -1531,6 +1551,12 @@
 
   function isActivatableElement(el) {
     if (!el || el === document || el === document.body) return false;
+    if (el.nodeType === 1) {
+      const overlayRole = el.getAttribute && el.getAttribute('role');
+      if (overlayRole && ['dialog', 'listbox', 'menu', 'menuitemcheckbox', 'menuitemradio', 'tree', 'grid'].includes(overlayRole)) return true;
+      const overlayContainer = el.closest && el.closest('[role="dialog"], [role="alertdialog"], [role="listbox"], [role="menu"], [aria-modal="true"]');
+      if (overlayContainer) return true;
+    }
     const tag = el.tagName;
     // Only "truly activable" elements switch to Focus-loupe.
     // IMG/VIDEO/IFRAME/OBJECT/EMBED and bare [tabindex]/contenteditable do NOT
@@ -1696,11 +1722,7 @@
     const cy = magnifierPanY + window.innerHeight / (2 * zoom);
     const x = Math.max(0, Math.min(window.innerWidth - 1, cx));
     const y = Math.max(0, Math.min(window.innerHeight - 1, cy));
-    // Temporarily hide the loupe so elementFromPoint sees the underlying page
-    const prevDisplay = loupe ? loupe.style.display : '';
-    if (loupe) loupe.style.display = 'none';
-    const el = document.elementFromPoint(x, y);
-    if (loupe) loupe.style.display = prevDisplay;
+    const el = getDeepElementFromPoint(x, y);
     if (!el) return;
     magnifierLastElement = el;
     const target = findActivableAncestor(el) || el;
