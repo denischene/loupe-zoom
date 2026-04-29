@@ -1092,7 +1092,35 @@
     edgeScrollCaptureTimer = setTimeout(() => attempt(5), 150);
   }
 
-  function handleArrowPan(direction, fine) {
+  // Pan the magnifier view based on the OS cursor position. Conceptually the
+  // visible (source) area is centred on the cursor; when the cursor reaches
+  // a viewport edge we scroll the underlying page so the magnifier can travel
+  // beyond it. No mouse button required: simple pointer movement is enough.
+  function magnifierPanFromMouse(cx, cy) {
+    if (state !== 'active_magnifier') return;
+    const z = zoom || magnifierZoom;
+    const halfW = window.innerWidth / (2 * z);
+    const halfH = window.innerHeight / (2 * z);
+    const maxPanX = Math.max(0, window.innerWidth - 2 * halfW);
+    const maxPanY = Math.max(0, window.innerHeight - 2 * halfH);
+    let nextX = cx - halfW;
+    let nextY = cy - halfH;
+    let scrollDX = 0, scrollDY = 0;
+    const edge = 4; // px from edge that triggers page-scroll
+    if (cx <= edge) scrollDX = -Math.max(8, halfW);
+    else if (cx >= window.innerWidth - 1 - edge) scrollDX = Math.max(8, halfW);
+    if (cy <= edge) scrollDY = -Math.max(8, halfH);
+    else if (cy >= window.innerHeight - 1 - edge) scrollDY = Math.max(8, halfH);
+    if (scrollDX || scrollDY) {
+      window.scrollBy({ left: scrollDX, top: scrollDY, behavior: 'auto' });
+      if (magnifierEdgeScrollTimer) clearTimeout(magnifierEdgeScrollTimer);
+      magnifierEdgeScrollTimer = setTimeout(() => { scheduleEdgeScrollCapture(); }, 60);
+    }
+    magnifierPanX = Math.max(0, Math.min(maxPanX, nextX));
+    magnifierPanY = Math.max(0, Math.min(maxPanY, nextY));
+    updateLoupe();
+  }
+
     if (state === 'active_focus') {
       enterManualScroll();
       startFocusInactivityTimer();
