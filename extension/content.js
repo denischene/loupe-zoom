@@ -54,6 +54,18 @@
   // Magnifier state
   let magnifierPanX = 0, magnifierPanY = 0;
   let magnifierLastElement = null;
+  // Magnifier mouse-drag panning state
+  let magnifierDragging = false;
+  let magnifierDragLastX = 0, magnifierDragLastY = 0;
+  let magnifierDragMoved = false;
+
+  // Remember which active mode we left when entering pending, so that exiting
+  // pending (Enter or left-click) restores THAT mode, not always Loupe souris.
+  let modeBeforePending = null;
+
+  // Coordinates where the user wants the next magnifier activation to be
+  // centered (set by adjustZoom transitions and toggle()). Null = top-left.
+  let magnifierAnchor = null;
 
   // Cursor ring animation
   let cursorRing = null;
@@ -720,9 +732,20 @@
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
 
-    // Start at top-left of page
-    magnifierPanX = 0;
-    magnifierPanY = 0;
+    // Start centered on the requested anchor (mouse position or restored
+    // pending anchor). Default = top-left when no anchor is set.
+    if (magnifierAnchor && typeof magnifierAnchor.x === 'number') {
+      const halfW = window.innerWidth / (2 * zoom);
+      const halfH = window.innerHeight / (2 * zoom);
+      const maxPanX = Math.max(0, window.innerWidth - window.innerWidth / zoom);
+      const maxPanY = Math.max(0, window.innerHeight - window.innerHeight / zoom);
+      magnifierPanX = Math.max(0, Math.min(maxPanX, magnifierAnchor.x - halfW));
+      magnifierPanY = Math.max(0, Math.min(maxPanY, magnifierAnchor.y - halfH));
+    } else {
+      magnifierPanX = 0;
+      magnifierPanY = 0;
+    }
+    magnifierAnchor = null;
 
     // Focus the first focusable element of the page
     const firstFocusable = findFirstFocusableElement();
@@ -745,6 +768,29 @@
     startMagnifierEventCapture();
     notifyBackground(true);
     persistState();
+  }
+
+  // Find the focusable element nearest to the given viewport coordinates.
+  // Used when leaving an active mode for pending: focus + cursor jump to the
+  // closest activable element so the user has a clear pending anchor.
+  function findNearestFocusable(x, y) {
+    const sel = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"], summary, [role="button"], [role="link"], [role="menuitem"], [role="tab"], [role="checkbox"], [role="radio"], [role="option"]';
+    const all = document.querySelectorAll(sel);
+    let best = null;
+    let bestDist = Infinity;
+    for (const el of all) {
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) continue;
+      // Skip off-screen elements
+      if (r.bottom < 0 || r.top > window.innerHeight ||
+          r.right < 0 || r.left > window.innerWidth) continue;
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dx = cx - x, dy = cy - y;
+      const d = dx * dx + dy * dy;
+      if (d < bestDist) { bestDist = d; best = el; }
+    }
+    return best;
   }
 
   // Find the first interactive/focusable element in document order.
@@ -791,7 +837,13 @@
   function enterPendingMode() {
     const wasFocus = state === 'active_focus';
     const wasMagnifier = state === 'active_magnifier';
+    const wasMouse = state === 'active_mouse';
     const focusEl = wasFocus ? focusTarget : null;
+    // Remember the mode we are leaving so pending can restore it on validation.
+    if (wasFocus) modeBeforePending = 'active_focus';
+    else if (wasMagnifier) modeBeforePending = 'active_magnifier';
+    else if (wasMouse) modeBeforePending = 'active_mouse';
+
     state = 'pending';
     clearFocusTimers();
     stopSlowCapture();
@@ -803,34 +855,95 @@
     currentImg = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 
-    // If coming from magnifier, focus on last zoomed element
-    if (wasMagnifier && magnifierLastElement) {
-      try { magnifierLastElement.focus(); } catch (e) {}
-      const rect = magnifierLastElement.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      mouseX = cx;
-      mouseY = cy;
-      showCursorRing(cx, cy);
+    // === Mode-specific pending anchoring ===
+    // Leaving Loupe souris: cursor stays at the last loupe centre (already
+    // tracked in mouseX/mouseY). Move focus to the nearest activable element
+    // and show a pending indicator on it.
+    if (wasMouse) {
+      const nearest = findNearestFocusable(mouseX, mouseY);
+      if (nearest) {
+        try { if (!nearest.hasAttribute('tabindex') && !['A','BUTTON','INPUT','SELECT','TEXTAREA','SUMMARY'].includes(nearest.tagName)) nearest.setAttribute('tabindex', '-1'); } catch (e) {}
+        try { nearest.focus({ preventScroll: true }); } catch (e) {}
+        showPendingIndicator(nearest);
+      }
+      showCursorRing(mouseX, mouseY);
     }
 
-    // If coming from focus mode, show ring at center of focused element
+    // Leaving Focus-loupe: focus already on the focused element. Move the
+    // virtual cursor (mouseX/mouseY) onto that element so a future Esc-from-
+    // mouse will be anchored consistently, and show a ring there.
     if (wasFocus && focusEl) {
-      const rect = focusEl.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      mouseX = cx;
-      mouseY = cy;
-      showCursorRing(cx, cy);
+      try {
+        const rect = focusEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        mouseX = cx;
+        mouseY = cy;
+        showPendingIndicator(focusEl);
+        showCursorRing(cx, cy);
+      } catch (e) {}
     }
 
-    const focused = document.activeElement;
-    if (focused && focused !== document.body && focused !== document) {
-      showPendingIndicator(focused);
+    // Leaving Agrandisseur: focus + virtual cursor jump to the nearest
+    // activable element to the magnifier centre, with a pending indicator.
+    if (wasMagnifier) {
+      const cx = Math.min(window.innerWidth / (2 * (zoom || magnifierZoom)) + magnifierPanX, window.innerWidth - 1);
+      const cy = Math.min(window.innerHeight / (2 * (zoom || magnifierZoom)) + magnifierPanY, window.innerHeight - 1);
+      const nearest = findNearestFocusable(cx, cy) || magnifierLastElement;
+      if (nearest) {
+        try { if (!nearest.hasAttribute('tabindex') && !['A','BUTTON','INPUT','SELECT','TEXTAREA','SUMMARY'].includes(nearest.tagName)) nearest.setAttribute('tabindex', '-1'); } catch (e) {}
+        try { nearest.focus({ preventScroll: true }); } catch (e) {}
+        const rect = nearest.getBoundingClientRect();
+        mouseX = rect.left + rect.width / 2;
+        mouseY = rect.top + rect.height / 2;
+        showPendingIndicator(nearest);
+        showCursorRing(mouseX, mouseY);
+      } else {
+        // Fallback to centre coordinates
+        mouseX = cx; mouseY = cy;
+        showCursorRing(cx, cy);
+      }
+    }
+
+    // Fallback: any other transition (e.g. from off → pending via start_pending)
+    if (!wasMouse && !wasFocus && !wasMagnifier) {
+      const focused = document.activeElement;
+      if (focused && focused !== document.body && focused !== document) {
+        showPendingIndicator(focused);
+      }
     }
 
     notifyBackground(true);
     persistState();
+  }
+
+  // Restore the active mode that was running just before pending (left-click
+  // or Enter on a focused element while in pending). Falls back to Loupe souris.
+  function restoreModeFromPending(focusedEl) {
+    const target = modeBeforePending;
+    modeBeforePending = null;
+    if (target === 'active_focus') {
+      const el = focusedEl || document.activeElement;
+      if (el && el !== document.body && el !== document && el !== document.documentElement) {
+        enterActiveFocusMode(el);
+      } else {
+        enterActiveMouseMode();
+      }
+    } else if (target === 'active_magnifier') {
+      // Anchor magnifier to the focused/clicked element (or current mouse pos)
+      const el = focusedEl || document.activeElement;
+      if (el && el !== document.body && el !== document && el !== document.documentElement) {
+        try {
+          const r = el.getBoundingClientRect();
+          magnifierAnchor = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        } catch (e) { magnifierAnchor = { x: mouseX, y: mouseY }; }
+      } else {
+        magnifierAnchor = { x: mouseX, y: mouseY };
+      }
+      enterMagnifierMode();
+    } else {
+      enterActiveMouseMode();
+    }
   }
 
   let lastUsedMode = null;
@@ -867,7 +980,11 @@
         try { mode = sessionStorage.getItem('__loupe_last_mode'); } catch (e) {}
       }
       if (mode === 'active_focus') enterActiveFocusMode();
-      else if (mode === 'active_magnifier') enterMagnifierMode();
+      else if (mode === 'active_magnifier') {
+        // Anchor magnifier on the current mouse position.
+        magnifierAnchor = { x: mouseX || window.innerWidth / 2, y: mouseY || window.innerHeight / 2 };
+        enterMagnifierMode();
+      }
       else enterActiveMouseMode(); // default Loupe souris
     } else {
       deactivate();
@@ -1411,7 +1528,18 @@
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      enterActiveMouseMode();
+      // Validation by left-click: the clicked element becomes the focus anchor
+      // when restoring focus or magnifier mode.
+      const tgt = (e.target && e.target !== document.body && e.target !== document) ? e.target : null;
+      if (tgt) {
+        try {
+          if (!tgt.hasAttribute('tabindex') && !['A','BUTTON','INPUT','SELECT','TEXTAREA','SUMMARY'].includes(tgt.tagName)) {
+            tgt.setAttribute('tabindex', '-1');
+          }
+          tgt.focus({ preventScroll: true });
+        } catch (err) {}
+      }
+      restoreModeFromPending(tgt);
       return;
     }
     // In magnifier mode, left-click activates the element under the visible center
@@ -1428,12 +1556,80 @@
   }, true);
 
   // Block the underlying left mousedown in magnifier so the page does not
-  // receive an unintended click at the cursor location.
+  // receive an unintended click at the cursor location, AND start a potential
+  // drag-to-pan gesture. A short drag (<5 px) is interpreted as a click.
   document.addEventListener('mousedown', (e) => {
     if (e.button === 0 && state === 'active_magnifier') {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+      magnifierDragging = true;
+      magnifierDragMoved = false;
+      magnifierDragLastX = e.clientX;
+      magnifierDragLastY = e.clientY;
+    }
+  }, true);
+
+  // Drag-to-pan: while the left button is held in magnifier, move the view
+  // proportionally to the mouse motion (divided by zoom so 1 screen pixel of
+  // mouse motion ≈ 1 source pixel of pan).
+  document.addEventListener('mousemove', (e) => {
+    if (!magnifierDragging || state !== 'active_magnifier') return;
+    const dx = e.clientX - magnifierDragLastX;
+    const dy = e.clientY - magnifierDragLastY;
+    if (!magnifierDragMoved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+      magnifierDragMoved = true;
+    }
+    if (!magnifierDragMoved) return;
+    magnifierDragLastX = e.clientX;
+    magnifierDragLastY = e.clientY;
+    // Inverse motion: dragging right reveals content on the right.
+    const viewW = window.innerWidth / zoom;
+    const viewH = window.innerHeight / zoom;
+    const maxPanX = Math.max(0, window.innerWidth - viewW);
+    const maxPanY = Math.max(0, window.innerHeight - viewH);
+    magnifierPanX -= dx / zoom;
+    magnifierPanY -= dy / zoom;
+    // If we hit a viewport edge, scroll the page in the same direction.
+    if (magnifierPanX < 0) {
+      const overflow = -magnifierPanX;
+      window.scrollBy({ left: -overflow, behavior: 'auto' });
+      magnifierPanX = 0;
+      scheduleEdgeScrollCapture();
+    } else if (magnifierPanX > maxPanX) {
+      const overflow = magnifierPanX - maxPanX;
+      window.scrollBy({ left: overflow, behavior: 'auto' });
+      magnifierPanX = maxPanX;
+      scheduleEdgeScrollCapture();
+    }
+    if (magnifierPanY < 0) {
+      const overflow = -magnifierPanY;
+      window.scrollBy({ top: -overflow, behavior: 'auto' });
+      magnifierPanY = 0;
+      scheduleEdgeScrollCapture();
+    } else if (magnifierPanY > maxPanY) {
+      const overflow = magnifierPanY - maxPanY;
+      window.scrollBy({ top: overflow, behavior: 'auto' });
+      magnifierPanY = maxPanY;
+      scheduleEdgeScrollCapture();
+    }
+    updateLoupe();
+  }, true);
+
+  document.addEventListener('mouseup', (e) => {
+    if (e.button !== 0) return;
+    if (magnifierDragging) {
+      const wasDrag = magnifierDragMoved;
+      magnifierDragging = false;
+      magnifierDragMoved = false;
+      if (wasDrag) {
+        // Suppress the click that would otherwise fire after the drag.
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const swallow = (ev) => { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); document.removeEventListener('click', swallow, true); };
+        document.addEventListener('click', swallow, true);
+      }
     }
   }, true);
 
@@ -1533,15 +1729,15 @@
     // Escape handled above (capture phase).
     if (e.key === 'Escape') return;
 
-    // Enter in pending → activate focus without triggering element
+    // Enter in pending → restore the mode that was active before pending,
+    // anchored on the currently-focused element (so the user picks up where
+    // they left off, possibly on a different activable element).
     if (e.key === 'Enter' && state === 'pending') {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
       const el = document.activeElement;
-      if (el && el !== document.body && el !== document) {
-        enterActiveFocusMode(el);
-      }
+      restoreModeFromPending((el && el !== document.body && el !== document) ? el : null);
       return;
     }
 
