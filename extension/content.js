@@ -377,6 +377,8 @@
   function doCapture(cb) {
     if (captureInFlight || (state !== 'active_mouse' && state !== 'active_focus' && state !== 'active_magnifier')) return;
     captureInFlight = true;
+    const _dbgT0 = Date.now();
+    if (LOUPE_DEBUG) dbgLog(`CAPTURE start state=${state} sinceLast=${_dbgLastCaptureAt ? (_dbgT0 - _dbgLastCaptureAt) + 'ms' : 'first'}`);
 
     if (loupe) loupe.style.visibility = 'hidden';
 
@@ -390,19 +392,24 @@
             const img = new Image();
             img.onload = () => {
               currentImg = dataUrl;
+              _dbgLastCaptureAt = Date.now();
+              if (LOUPE_DEBUG) dbgLog(`CAPTURE done in ${_dbgLastCaptureAt - _dbgT0}ms size=${img.naturalWidth}x${img.naturalHeight}`);
               if (loupe) loupe.style.visibility = 'visible';
               updateLoupe();
               if (cb) cb();
             };
             img.onerror = () => {
+              if (LOUPE_DEBUG) dbgLog('CAPTURE image load error');
               if (loupe) loupe.style.visibility = 'visible';
             };
             img.src = dataUrl;
           } else {
+            if (LOUPE_DEBUG) dbgLog('CAPTURE returned no dataUrl');
             if (loupe) loupe.style.visibility = 'visible';
           }
-        }).catch(() => {
+        }).catch((err) => {
           captureInFlight = false;
+          if (LOUPE_DEBUG) dbgLog('CAPTURE rejected', err && err.message);
           if (loupe) loupe.style.visibility = 'visible';
         });
       });
