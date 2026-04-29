@@ -591,6 +591,17 @@
     mouseY = e.clientY;
     if (LOUPE_DEBUG) {
       const now = Date.now();
+      try {
+        const elNow = getDeepElementFromPoint(e.clientX, e.clientY);
+        const inOv = !!(elNow && elNow.closest && elNow.closest('[role="dialog"],[role="listbox"],[role="menu"],[aria-modal="true"]'));
+        if (inOv !== _dbgLastInOverlay) {
+          _dbgLastInOverlay = inOv;
+          dbgLog(`>>> OVERLAY TRANSITION: ${inOv ? 'ENTER' : 'EXIT'} at (${e.clientX},${e.clientY}) target=${dbgDescribeEl(elNow)} -- forcing recapture`);
+          if (state === 'active_mouse' || state === 'active_focus') {
+            doCapture(() => updateLoupe());
+          }
+        }
+      } catch (err) {}
       if (now - _dbgLastMoveLog > 200) {
         _dbgLastMoveLog = now;
         let el = null;
