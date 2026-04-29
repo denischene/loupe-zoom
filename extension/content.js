@@ -1613,83 +1613,17 @@
     }
   }, true);
 
-  // Block the underlying left mousedown in magnifier so the page does not
-  // receive an unintended click at the cursor location, AND start a potential
-  // drag-to-pan gesture. A short drag (<5 px) is interpreted as a click.
+  // In magnifier mode, swallow the underlying left mousedown so the page
+  // does not receive an unintended interaction at the cursor location. The
+  // actual activation is performed on `click` by `activateMagnifierElement`.
   document.addEventListener('mousedown', (e) => {
     if (e.button === 0 && state === 'active_magnifier') {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      magnifierDragging = true;
-      magnifierDragMoved = false;
-      magnifierDragLastX = e.clientX;
-      magnifierDragLastY = e.clientY;
     }
   }, true);
 
-  // Drag-to-pan: while the left button is held in magnifier, move the view
-  // proportionally to the mouse motion (divided by zoom so 1 screen pixel of
-  // mouse motion ≈ 1 source pixel of pan).
-  document.addEventListener('mousemove', (e) => {
-    if (!magnifierDragging || state !== 'active_magnifier') return;
-    const dx = e.clientX - magnifierDragLastX;
-    const dy = e.clientY - magnifierDragLastY;
-    if (!magnifierDragMoved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
-      magnifierDragMoved = true;
-    }
-    if (!magnifierDragMoved) return;
-    magnifierDragLastX = e.clientX;
-    magnifierDragLastY = e.clientY;
-    // Inverse motion: dragging right reveals content on the right.
-    const viewW = window.innerWidth / zoom;
-    const viewH = window.innerHeight / zoom;
-    const maxPanX = Math.max(0, window.innerWidth - viewW);
-    const maxPanY = Math.max(0, window.innerHeight - viewH);
-    magnifierPanX -= dx / zoom;
-    magnifierPanY -= dy / zoom;
-    // If we hit a viewport edge, scroll the page in the same direction.
-    if (magnifierPanX < 0) {
-      const overflow = -magnifierPanX;
-      window.scrollBy({ left: -overflow, behavior: 'auto' });
-      magnifierPanX = 0;
-      scheduleEdgeScrollCapture();
-    } else if (magnifierPanX > maxPanX) {
-      const overflow = magnifierPanX - maxPanX;
-      window.scrollBy({ left: overflow, behavior: 'auto' });
-      magnifierPanX = maxPanX;
-      scheduleEdgeScrollCapture();
-    }
-    if (magnifierPanY < 0) {
-      const overflow = -magnifierPanY;
-      window.scrollBy({ top: -overflow, behavior: 'auto' });
-      magnifierPanY = 0;
-      scheduleEdgeScrollCapture();
-    } else if (magnifierPanY > maxPanY) {
-      const overflow = magnifierPanY - maxPanY;
-      window.scrollBy({ top: overflow, behavior: 'auto' });
-      magnifierPanY = maxPanY;
-      scheduleEdgeScrollCapture();
-    }
-    updateLoupe();
-  }, true);
-
-  document.addEventListener('mouseup', (e) => {
-    if (e.button !== 0) return;
-    if (magnifierDragging) {
-      const wasDrag = magnifierDragMoved;
-      magnifierDragging = false;
-      magnifierDragMoved = false;
-      if (wasDrag) {
-        // Suppress the click that would otherwise fire after the drag.
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        const swallow = (ev) => { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); document.removeEventListener('click', swallow, true); };
-        document.addEventListener('click', swallow, true);
-      }
-    }
-  }, true);
 
   function findActivableAncestor(el) {
     let cur = el;
