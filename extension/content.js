@@ -593,6 +593,19 @@
     mouseY = e.clientY;
     if (LOUPE_DEBUG) {
       const now = Date.now();
+      // Detect overlay enter/exit transitions and force-recapture
+      try {
+        const elNow = getDeepElementFromPoint(e.clientX, e.clientY);
+        const inOv = !!(elNow && elNow.closest && elNow.closest('[role="dialog"],[role="listbox"],[role="menu"],[aria-modal="true"]'));
+        if (inOv !== _dbgLastInOverlay) {
+          _dbgLastInOverlay = inOv;
+          dbgLog(`>>> OVERLAY TRANSITION: ${inOv ? 'ENTER' : 'EXIT'} at (${e.clientX},${e.clientY}) target=${dbgDescribeEl(elNow)} -- forcing recapture`);
+          // Force a fresh capture so the loupe content reflects the new modal
+          if (state === 'active_mouse' || state === 'active_focus') {
+            doCapture(() => updateLoupe());
+          }
+        }
+      } catch (err) {}
       if (now - _dbgLastMoveLog > 200) {
         _dbgLastMoveLog = now;
         let el = null;
