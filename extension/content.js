@@ -1551,6 +1551,12 @@
 
   function isActivatableElement(el) {
     if (!el || el === document || el === document.body) return false;
+    if (el.nodeType === 1) {
+      const overlayRole = el.getAttribute && el.getAttribute('role');
+      if (overlayRole && ['dialog', 'listbox', 'menu', 'menuitemcheckbox', 'menuitemradio', 'tree', 'grid'].includes(overlayRole)) return true;
+      const overlayContainer = el.closest && el.closest('[role="dialog"], [role="alertdialog"], [role="listbox"], [role="menu"], [aria-modal="true"]');
+      if (overlayContainer) return true;
+    }
     const tag = el.tagName;
     // Only "truly activable" elements switch to Focus-loupe.
     // IMG/VIDEO/IFRAME/OBJECT/EMBED and bare [tabindex]/contenteditable do NOT
