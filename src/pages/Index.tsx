@@ -268,6 +268,11 @@ const Index = () => {
                   <li>Actionnez le bouton « Charger l'extension décompressée ».</li>
                   <li>Choisissez le dossier dans lequel vous avez décompressé l'archive (ne pas rentrer dans le dossier, sélectionnez juste le dossier).</li>
                   <li>Cliquez sur le bouton « Extension » de la barre du navigateur et décochez l'œil ou l'épingle sur la ligne Loupe-Zoom pour l'ajouter à la barre.</li>
+                  <li>
+                    Ouvrez une page web et cliquez sur le bouton Loupe-Zoom, ou utilisez le raccourci{" "}
+                    <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Ctrl+Maj+Z</kbd>{" "}
+                    pour lancer l'extension.
+                  </li>
                 </ol>
               </div>
             </article>
