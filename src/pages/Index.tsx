@@ -230,10 +230,11 @@ const Index = () => {
                   <li>
                     Sélectionnez le fichier <code className="text-primary">.zip</code> (sans le décompresser).
                   </li>
+                  <li>Gérer les extensions et épingler à la barre d'outils.</li>
                   <li>
-                    Gérer les extensions et épingler à la barre d'outils, ou bien utiliser le raccourci{" "}
+                    Ouvrez une page web et cliquez sur le bouton Loupe-Zoom, ou utilisez le raccourci{" "}
                     <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono border border-border" style={{ color: DARK_BROWN }}>Ctrl+Maj+Z</kbd>{" "}
-                    pour lancer directement l'extension.
+                    pour lancer l'extension.
                   </li>
                 </ol>
               </div>
