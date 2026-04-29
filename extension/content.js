@@ -10,6 +10,9 @@
   let LOUPE_DEBUG = false;
   let _dbgBadge = null;
   let _dbgLastMoveLog = 0;
+  let _dbgLastUpdateLog = 0;
+  let _dbgLastCaptureAt = 0;
+  let _dbgLastInOverlay = false;
   function dbgDescribeEl(el) {
     if (!el) return 'null';
     try {
