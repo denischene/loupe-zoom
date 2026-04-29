@@ -900,12 +900,15 @@
 
     // Leaving Focus-loupe: focus already on the focused element. Move the
     // virtual cursor (mouseX/mouseY) onto that element so a future Esc-from-
-    // mouse will be anchored consistently, and show a ring there.
+    // mouse will be anchored consistently, and show a ring there. We also
+    // record a `pendingMouseAnchor` so the cursor stays visually attached to
+    // the focus until the user really moves the OS mouse a few pixels.
     if (wasFocus && focusEl) {
       try {
         const rect = focusEl.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
+        pendingMouseAnchor = { realX: mouseX, realY: mouseY, virtualX: cx, virtualY: cy };
         mouseX = cx;
         mouseY = cy;
         showPendingIndicator(focusEl);
@@ -923,8 +926,11 @@
         try { if (!nearest.hasAttribute('tabindex') && !['A','BUTTON','INPUT','SELECT','TEXTAREA','SUMMARY'].includes(nearest.tagName)) nearest.setAttribute('tabindex', '-1'); } catch (e) {}
         try { nearest.focus({ preventScroll: true }); } catch (e) {}
         const rect = nearest.getBoundingClientRect();
-        mouseX = rect.left + rect.width / 2;
-        mouseY = rect.top + rect.height / 2;
+        const tx = rect.left + rect.width / 2;
+        const ty = rect.top + rect.height / 2;
+        pendingMouseAnchor = { realX: mouseX, realY: mouseY, virtualX: tx, virtualY: ty };
+        mouseX = tx;
+        mouseY = ty;
         showPendingIndicator(nearest);
         showCursorRing(mouseX, mouseY);
       } else {
