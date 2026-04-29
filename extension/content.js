@@ -522,7 +522,33 @@
     }
 
     if (state === 'active_magnifier') {
-      // Mouse movement doesn't affect magnifier
+      // In magnifier mode, ANY mouse movement pans the view. We move the
+      // visible source-area centre toward the cursor (clamped) and scroll the
+      // page when the cursor reaches a viewport edge. Left-click is reserved
+      // for activating the element under the magnifier centre.
+      magnifierPanFromMouse(e.clientX, e.clientY);
+      return;
+    }
+
+    if (state === 'pending') {
+      // Keep the virtual cursor anchored to the focus/magnifier centre that
+      // was set on entering pending, until the user actually moves the OS
+      // mouse a meaningful amount. This way a Focus → pending transition
+      // visually keeps the cursor on the focused element.
+      if (pendingMouseAnchor) {
+        const dx = e.clientX - pendingMouseAnchor.realX;
+        const dy = e.clientY - pendingMouseAnchor.realY;
+        if (Math.hypot(dx, dy) < 12) {
+          // Restore the anchored virtual position
+          mouseX = pendingMouseAnchor.virtualX;
+          mouseY = pendingMouseAnchor.virtualY;
+          // Also keep the cursor ring visible at the anchor
+          showCursorRing(mouseX, mouseY);
+          return;
+        }
+        // The user really moved → release the anchor
+        pendingMouseAnchor = null;
+      }
       return;
     }
 
