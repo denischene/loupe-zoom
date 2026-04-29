@@ -760,6 +760,7 @@
     currentImg = null;
     doCapture(() => { updateLoupe(); });
     startSlowCapture();
+    startMagnifierEventCapture();
     notifyBackground(true);
     persistState();
   }
@@ -776,6 +777,7 @@
     document.body.classList.add('loupe-active');
     hidePendingIndicator();
     if (focusTarget) startFocusOnElement(focusTarget);
+    startMagnifierEventCapture();
     notifyBackground(true);
     persistState();
   }
