@@ -1637,6 +1637,9 @@
 
   function onFocusChange(e) {
     const el = e.target;
+    if (LOUPE_DEBUG) {
+      dbgLog(`focusin state=${state} target=${dbgDescribeEl(el)} activeEl=${dbgDescribeEl(document.activeElement)}`);
+    }
 
     if (state === 'pending') {
       showPendingIndicator(el);
