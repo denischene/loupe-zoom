@@ -378,11 +378,11 @@
   let magnifierEventListeners = null;
 
   function scheduleMagnifierCapture(delay) {
-    if (state !== 'active_magnifier') return;
+    if (state !== 'active_magnifier' && state !== 'active_mouse' && state !== 'active_focus') return;
     if (magnifierCaptureTimer) clearTimeout(magnifierCaptureTimer);
     magnifierCaptureTimer = setTimeout(() => {
       magnifierCaptureTimer = null;
-      if (state === 'active_magnifier') doCapture();
+      if (state === 'active_magnifier' || state === 'active_mouse' || state === 'active_focus') doCapture();
     }, delay || 120);
   }
 
