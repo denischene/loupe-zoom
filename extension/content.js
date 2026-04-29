@@ -54,10 +54,13 @@
   // Magnifier state
   let magnifierPanX = 0, magnifierPanY = 0;
   let magnifierLastElement = null;
-  // Magnifier mouse-drag panning state
-  let magnifierDragging = false;
-  let magnifierDragLastX = 0, magnifierDragLastY = 0;
-  let magnifierDragMoved = false;
+  // Magnifier mouse panning state (cursor at viewport edge → page scroll)
+  let magnifierEdgeScrollTimer = null;
+
+  // While in pending, anchor the virtual cursor to the spot where the
+  // previous mode left off (e.g. the focused element), until the OS mouse
+  // really moves a few pixels. { realX, realY, virtualX, virtualY }
+  let pendingMouseAnchor = null;
 
   // Remember which active mode we left when entering pending, so that exiting
   // pending (Enter or left-click) restores THAT mode, not always Loupe souris.
@@ -522,7 +525,33 @@
     }
 
     if (state === 'active_magnifier') {
-      // Mouse movement doesn't affect magnifier
+      // In magnifier mode, ANY mouse movement pans the view. We move the
+      // visible source-area centre toward the cursor (clamped) and scroll the
+      // page when the cursor reaches a viewport edge. Left-click is reserved
+      // for activating the element under the magnifier centre.
+      magnifierPanFromMouse(e.clientX, e.clientY);
+      return;
+    }
+
+    if (state === 'pending') {
+      // Keep the virtual cursor anchored to the focus/magnifier centre that
+      // was set on entering pending, until the user actually moves the OS
+      // mouse a meaningful amount. This way a Focus → pending transition
+      // visually keeps the cursor on the focused element.
+      if (pendingMouseAnchor) {
+        const dx = e.clientX - pendingMouseAnchor.realX;
+        const dy = e.clientY - pendingMouseAnchor.realY;
+        if (Math.hypot(dx, dy) < 12) {
+          // Restore the anchored virtual position
+          mouseX = pendingMouseAnchor.virtualX;
+          mouseY = pendingMouseAnchor.virtualY;
+          // Also keep the cursor ring visible at the anchor
+          showCursorRing(mouseX, mouseY);
+          return;
+        }
+        // The user really moved → release the anchor
+        pendingMouseAnchor = null;
+      }
       return;
     }
 
@@ -871,12 +900,15 @@
 
     // Leaving Focus-loupe: focus already on the focused element. Move the
     // virtual cursor (mouseX/mouseY) onto that element so a future Esc-from-
-    // mouse will be anchored consistently, and show a ring there.
+    // mouse will be anchored consistently, and show a ring there. We also
+    // record a `pendingMouseAnchor` so the cursor stays visually attached to
+    // the focus until the user really moves the OS mouse a few pixels.
     if (wasFocus && focusEl) {
       try {
         const rect = focusEl.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
+        pendingMouseAnchor = { realX: mouseX, realY: mouseY, virtualX: cx, virtualY: cy };
         mouseX = cx;
         mouseY = cy;
         showPendingIndicator(focusEl);
@@ -894,8 +926,11 @@
         try { if (!nearest.hasAttribute('tabindex') && !['A','BUTTON','INPUT','SELECT','TEXTAREA','SUMMARY'].includes(nearest.tagName)) nearest.setAttribute('tabindex', '-1'); } catch (e) {}
         try { nearest.focus({ preventScroll: true }); } catch (e) {}
         const rect = nearest.getBoundingClientRect();
-        mouseX = rect.left + rect.width / 2;
-        mouseY = rect.top + rect.height / 2;
+        const tx = rect.left + rect.width / 2;
+        const ty = rect.top + rect.height / 2;
+        pendingMouseAnchor = { realX: mouseX, realY: mouseY, virtualX: tx, virtualY: ty };
+        mouseX = tx;
+        mouseY = ty;
         showPendingIndicator(nearest);
         showCursorRing(mouseX, mouseY);
       } else {
@@ -922,6 +957,7 @@
   function restoreModeFromPending(focusedEl) {
     const target = modeBeforePending;
     modeBeforePending = null;
+    pendingMouseAnchor = null;
     if (target === 'active_focus') {
       const el = focusedEl || document.activeElement;
       if (el && el !== document.body && el !== document && el !== document.documentElement) {
@@ -954,6 +990,8 @@
       try { sessionStorage.setItem('__loupe_last_mode', state); } catch (e) {}
     }
     state = 'off';
+    pendingMouseAnchor = null;
+    modeBeforePending = null;
     clearFocusTimers();
     stopSlowCapture();
     stopMagnifierEventCapture();
@@ -1061,6 +1099,35 @@
       }
     };
     edgeScrollCaptureTimer = setTimeout(() => attempt(5), 150);
+  }
+
+  // Pan the magnifier view based on the OS cursor position. Conceptually the
+  // visible (source) area is centred on the cursor; when the cursor reaches
+  // a viewport edge we scroll the underlying page so the magnifier can travel
+  // beyond it. No mouse button required: simple pointer movement is enough.
+  function magnifierPanFromMouse(cx, cy) {
+    if (state !== 'active_magnifier') return;
+    const z = zoom || magnifierZoom;
+    const halfW = window.innerWidth / (2 * z);
+    const halfH = window.innerHeight / (2 * z);
+    const maxPanX = Math.max(0, window.innerWidth - 2 * halfW);
+    const maxPanY = Math.max(0, window.innerHeight - 2 * halfH);
+    let nextX = cx - halfW;
+    let nextY = cy - halfH;
+    let scrollDX = 0, scrollDY = 0;
+    const edge = 4; // px from edge that triggers page-scroll
+    if (cx <= edge) scrollDX = -Math.max(8, halfW);
+    else if (cx >= window.innerWidth - 1 - edge) scrollDX = Math.max(8, halfW);
+    if (cy <= edge) scrollDY = -Math.max(8, halfH);
+    else if (cy >= window.innerHeight - 1 - edge) scrollDY = Math.max(8, halfH);
+    if (scrollDX || scrollDY) {
+      window.scrollBy({ left: scrollDX, top: scrollDY, behavior: 'auto' });
+      if (magnifierEdgeScrollTimer) clearTimeout(magnifierEdgeScrollTimer);
+      magnifierEdgeScrollTimer = setTimeout(() => { scheduleEdgeScrollCapture(); }, 60);
+    }
+    magnifierPanX = Math.max(0, Math.min(maxPanX, nextX));
+    magnifierPanY = Math.max(0, Math.min(maxPanY, nextY));
+    updateLoupe();
   }
 
   function handleArrowPan(direction, fine) {
@@ -1555,83 +1622,17 @@
     }
   }, true);
 
-  // Block the underlying left mousedown in magnifier so the page does not
-  // receive an unintended click at the cursor location, AND start a potential
-  // drag-to-pan gesture. A short drag (<5 px) is interpreted as a click.
+  // In magnifier mode, swallow the underlying left mousedown so the page
+  // does not receive an unintended interaction at the cursor location. The
+  // actual activation is performed on `click` by `activateMagnifierElement`.
   document.addEventListener('mousedown', (e) => {
     if (e.button === 0 && state === 'active_magnifier') {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      magnifierDragging = true;
-      magnifierDragMoved = false;
-      magnifierDragLastX = e.clientX;
-      magnifierDragLastY = e.clientY;
     }
   }, true);
 
-  // Drag-to-pan: while the left button is held in magnifier, move the view
-  // proportionally to the mouse motion (divided by zoom so 1 screen pixel of
-  // mouse motion ≈ 1 source pixel of pan).
-  document.addEventListener('mousemove', (e) => {
-    if (!magnifierDragging || state !== 'active_magnifier') return;
-    const dx = e.clientX - magnifierDragLastX;
-    const dy = e.clientY - magnifierDragLastY;
-    if (!magnifierDragMoved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
-      magnifierDragMoved = true;
-    }
-    if (!magnifierDragMoved) return;
-    magnifierDragLastX = e.clientX;
-    magnifierDragLastY = e.clientY;
-    // Inverse motion: dragging right reveals content on the right.
-    const viewW = window.innerWidth / zoom;
-    const viewH = window.innerHeight / zoom;
-    const maxPanX = Math.max(0, window.innerWidth - viewW);
-    const maxPanY = Math.max(0, window.innerHeight - viewH);
-    magnifierPanX -= dx / zoom;
-    magnifierPanY -= dy / zoom;
-    // If we hit a viewport edge, scroll the page in the same direction.
-    if (magnifierPanX < 0) {
-      const overflow = -magnifierPanX;
-      window.scrollBy({ left: -overflow, behavior: 'auto' });
-      magnifierPanX = 0;
-      scheduleEdgeScrollCapture();
-    } else if (magnifierPanX > maxPanX) {
-      const overflow = magnifierPanX - maxPanX;
-      window.scrollBy({ left: overflow, behavior: 'auto' });
-      magnifierPanX = maxPanX;
-      scheduleEdgeScrollCapture();
-    }
-    if (magnifierPanY < 0) {
-      const overflow = -magnifierPanY;
-      window.scrollBy({ top: -overflow, behavior: 'auto' });
-      magnifierPanY = 0;
-      scheduleEdgeScrollCapture();
-    } else if (magnifierPanY > maxPanY) {
-      const overflow = magnifierPanY - maxPanY;
-      window.scrollBy({ top: overflow, behavior: 'auto' });
-      magnifierPanY = maxPanY;
-      scheduleEdgeScrollCapture();
-    }
-    updateLoupe();
-  }, true);
-
-  document.addEventListener('mouseup', (e) => {
-    if (e.button !== 0) return;
-    if (magnifierDragging) {
-      const wasDrag = magnifierDragMoved;
-      magnifierDragging = false;
-      magnifierDragMoved = false;
-      if (wasDrag) {
-        // Suppress the click that would otherwise fire after the drag.
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        const swallow = (ev) => { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); document.removeEventListener('click', swallow, true); };
-        document.addEventListener('click', swallow, true);
-      }
-    }
-  }, true);
 
   function findActivableAncestor(el) {
     let cur = el;
