@@ -1886,8 +1886,12 @@
     adjustZoom(e.deltaY < 0 ? 1 : -1);
   }, { passive: false, capture: true });
 
-  // Mouse move
-  document.addEventListener('mousemove', onMove);
+  // Mouse move — capture phase + window-level + pointermove fallback so that
+  // sites which call stopPropagation() on mousemove (Google overlays/modals)
+  // can't prevent the loupe from following the cursor.
+  document.addEventListener('mousemove', onMove, true);
+  window.addEventListener('mousemove', onMove, true);
+  document.addEventListener('pointermove', onMove, true);
 
   // Scroll → recapture
   let scrollTimer = null;
