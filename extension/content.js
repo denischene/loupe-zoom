@@ -3,6 +3,56 @@
   // 'off' | 'pending' | 'active_mouse' | 'active_focus' | 'active_magnifier'
   let state = 'off';
 
+  // === DEBUG MODE ===
+  // Toggle with Ctrl+Shift+D. Persisted in storage (key: loupeDebug).
+  // When ON, logs mouse/focus events + overlay/modal context to the console
+  // and shows a small floating badge.
+  let LOUPE_DEBUG = false;
+  let _dbgBadge = null;
+  let _dbgLastMoveLog = 0;
+  function dbgDescribeEl(el) {
+    if (!el) return 'null';
+    try {
+      const tag = (el.tagName || '?').toLowerCase();
+      const id = el.id ? '#' + el.id : '';
+      const cls = (typeof el.className === 'string' && el.className) ? '.' + el.className.split(/\s+/).slice(0, 2).join('.') : '';
+      const role = el.getAttribute && el.getAttribute('role');
+      const aria = el.getAttribute && el.getAttribute('aria-modal');
+      const inDialog = !!(el.closest && (el.closest('[role="dialog"],[role="listbox"],[role="menu"],[aria-modal="true"]')));
+      return `${tag}${id}${cls}${role ? '[role=' + role + ']' : ''}${aria ? '[aria-modal=' + aria + ']' : ''}${inDialog ? ' {in-overlay}' : ''}`;
+    } catch (e) { return '?'; }
+  }
+  function dbgLog(...args) {
+    if (!LOUPE_DEBUG) return;
+    try { console.log('%c[Loupe-DBG]', 'color:#fff;background:#c0392b;padding:1px 4px;border-radius:2px', ...args); } catch (e) {}
+  }
+  function dbgUpdateBadge() {
+    if (!LOUPE_DEBUG) {
+      if (_dbgBadge && _dbgBadge.parentNode) _dbgBadge.parentNode.removeChild(_dbgBadge);
+      _dbgBadge = null;
+      return;
+    }
+    if (!_dbgBadge) {
+      _dbgBadge = document.createElement('div');
+      _dbgBadge.id = 'loupe-debug-badge';
+      _dbgBadge.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;background:#c0392b;color:#fff;font:12px/1.2 monospace;padding:4px 8px;border-radius:4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.3)';
+      _dbgBadge.textContent = '🐞 Loupe DEBUG';
+      (document.documentElement || document.body).appendChild(_dbgBadge);
+    }
+  }
+  function setDebugMode(on) {
+    LOUPE_DEBUG = !!on;
+    try { browser.storage.local.set({ loupeDebug: LOUPE_DEBUG }); } catch (e) {}
+    dbgUpdateBadge();
+    try { console.log('%c[Loupe-DBG]', 'color:#fff;background:#c0392b;padding:1px 4px;border-radius:2px', 'Debug mode =', LOUPE_DEBUG ? 'ON' : 'OFF'); } catch (e) {}
+  }
+  try {
+    browser.storage.local.get(['loupeDebug']).then((d) => {
+      if (d && d.loupeDebug) { LOUPE_DEBUG = true; dbgUpdateBadge(); }
+    });
+  } catch (e) {}
+
+
   let loupe = null;
   let zoomLabel = null;
   let pendingIndicator = null;
