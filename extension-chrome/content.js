@@ -559,6 +559,20 @@
     loupe.style.backgroundImage = 'url(' + currentImg + ')';
     loupe.style.backgroundSize = bgW + 'px ' + bgH + 'px';
     loupe.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
+
+    if (LOUPE_DEBUG) {
+      const now = Date.now();
+      if (now - _dbgLastUpdateLog > 250) {
+        _dbgLastUpdateLog = now;
+        let rect = null;
+        try { rect = loupe.getBoundingClientRect(); } catch (e) {}
+        const rectStr = rect ? `rect=(${Math.round(rect.left)},${Math.round(rect.top)} ${Math.round(rect.width)}x${Math.round(rect.height)})` : 'rect=?';
+        const ageStr = _dbgLastCaptureAt ? `imgAge=${now - _dbgLastCaptureAt}ms` : 'imgAge=?';
+        const cs = loupe.ownerDocument && loupe.ownerDocument.defaultView ? loupe.ownerDocument.defaultView.getComputedStyle(loupe) : null;
+        const csStr = cs ? `z=${cs.zIndex} vis=${cs.visibility} disp=${cs.display}` : '';
+        dbgLog(`UPDATE pos=(${Math.round(loupeLeft)},${Math.round(loupeTop)}) src=(${Math.round(posX)},${Math.round(posY)}) ${rectStr} ${csStr} ${ageStr}`);
+      }
+    }
   }
 
   function scheduleUpdate() {
