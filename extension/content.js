@@ -315,7 +315,7 @@
       '<line x1="8" y1="5.5" x2="8" y2="10.5" stroke="#333" stroke-width="1.3"/>' +
       '</svg>';
     pendingIndicator.style.display = 'none';
-    document.body.appendChild(pendingIndicator);
+    loupeRoot().appendChild(pendingIndicator);
   }
 
   function showPendingIndicator(el) {
@@ -337,7 +337,7 @@
     if (!cursorRing) {
       cursorRing = document.createElement('div');
       cursorRing.id = 'loupe-cursor-ring';
-      document.body.appendChild(cursorRing);
+      loupeRoot().appendChild(cursorRing);
     }
     cursorRing.style.left = x + 'px';
     cursorRing.style.top = y + 'px';
