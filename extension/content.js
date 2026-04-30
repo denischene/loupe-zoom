@@ -529,6 +529,7 @@
 
   function updateLoupe() {
     if ((state !== 'active_mouse' && state !== 'active_focus' && state !== 'active_magnifier') || !loupe || !currentImg) return;
+    ensureLoupeAttachedToRoot();
 
     const isFocus = state === 'active_focus';
     const isMagnifier = state === 'active_magnifier';
