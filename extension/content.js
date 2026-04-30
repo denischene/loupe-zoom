@@ -250,6 +250,14 @@
 
   // === LOUPE DOM ===
 
+  // Attach overlays to <html> rather than <body> to escape any transformed
+  // ancestor that would break `position: fixed` anchoring (Google's Quick
+  // Settings / dialogs apply transforms on body wrappers, causing the loupe
+  // to be visually offset and to look "stuck" on modal edges).
+  function loupeRoot() {
+    return document.documentElement || document.body;
+  }
+
   function createLoupe() {
     if (loupe) return;
     loupe = document.createElement('div');
@@ -260,7 +268,17 @@
     zoomLabel.style.display = 'none';
     loupe.appendChild(zoomLabel);
 
-    document.body.appendChild(loupe);
+    loupeRoot().appendChild(loupe);
+  }
+
+  // Re-attach the loupe to <html> if something moved it (or if its current
+  // offsetParent is a transformed ancestor). Cheap to call.
+  function ensureLoupeAttachedToRoot() {
+    if (!loupe) return;
+    const root = loupeRoot();
+    if (loupe.parentNode !== root) {
+      try { root.appendChild(loupe); } catch (e) {}
+    }
   }
 
   function applyLoupeSize() {
