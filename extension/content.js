@@ -250,6 +250,14 @@
 
   // === LOUPE DOM ===
 
+  // Attach overlays to <html> rather than <body> to escape any transformed
+  // ancestor that would break `position: fixed` anchoring (Google's Quick
+  // Settings / dialogs apply transforms on body wrappers, causing the loupe
+  // to be visually offset and to look "stuck" on modal edges).
+  function loupeRoot() {
+    return document.documentElement || document.body;
+  }
+
   function createLoupe() {
     if (loupe) return;
     loupe = document.createElement('div');
@@ -260,7 +268,17 @@
     zoomLabel.style.display = 'none';
     loupe.appendChild(zoomLabel);
 
-    document.body.appendChild(loupe);
+    loupeRoot().appendChild(loupe);
+  }
+
+  // Re-attach the loupe to <html> if something moved it (or if its current
+  // offsetParent is a transformed ancestor). Cheap to call.
+  function ensureLoupeAttachedToRoot() {
+    if (!loupe) return;
+    const root = loupeRoot();
+    if (loupe.parentNode !== root) {
+      try { root.appendChild(loupe); } catch (e) {}
+    }
   }
 
   function applyLoupeSize() {
@@ -297,7 +315,7 @@
       '<line x1="8" y1="5.5" x2="8" y2="10.5" stroke="#333" stroke-width="1.3"/>' +
       '</svg>';
     pendingIndicator.style.display = 'none';
-    document.body.appendChild(pendingIndicator);
+    loupeRoot().appendChild(pendingIndicator);
   }
 
   function showPendingIndicator(el) {
@@ -319,7 +337,7 @@
     if (!cursorRing) {
       cursorRing = document.createElement('div');
       cursorRing.id = 'loupe-cursor-ring';
-      document.body.appendChild(cursorRing);
+      loupeRoot().appendChild(cursorRing);
     }
     cursorRing.style.left = x + 'px';
     cursorRing.style.top = y + 'px';
@@ -511,6 +529,7 @@
 
   function updateLoupe() {
     if ((state !== 'active_mouse' && state !== 'active_focus' && state !== 'active_magnifier') || !loupe || !currentImg) return;
+    ensureLoupeAttachedToRoot();
 
     const isFocus = state === 'active_focus';
     const isMagnifier = state === 'active_magnifier';
@@ -561,6 +580,24 @@
     loupe.style.backgroundImage = 'url(' + currentImg + ')';
     loupe.style.backgroundSize = bgW + 'px ' + bgH + 'px';
     loupe.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
+
+    // === Anti-transform compensation (defense in depth) ===
+    // Even though the loupe is attached to <html>, some sites apply a
+    // transform on <html> itself, which still creates a containing block
+    // for fixed elements. Detect a center-vs-cursor mismatch and offset
+    // left/top to compensate so the loupe stays exactly under the cursor.
+    try {
+      const rect = loupe.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = loupeLeft - centerX;
+      const dy = loupeTop - centerY;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        loupe.style.left = (loupeLeft + dx) + 'px';
+        loupe.style.top = (loupeTop + dy) + 'px';
+        if (LOUPE_DEBUG) dbgLog(`COMPENSATE dx=${dx.toFixed(1)} dy=${dy.toFixed(1)} (transformed ancestor detected)`);
+      }
+    } catch (e) {}
 
     if (LOUPE_DEBUG) {
       const now = Date.now();

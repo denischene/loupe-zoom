@@ -5,6 +5,8 @@
 
   // === DEBUG MODE ===
   // Toggle with Ctrl+Shift+D. Persisted in storage (key: loupeDebug).
+  // When ON, logs mouse/focus events + overlay/modal context to the console
+  // and shows a small floating badge.
   let LOUPE_DEBUG = false;
   let _dbgBadge = null;
   let _dbgLastMoveLog = 0;
@@ -248,6 +250,14 @@
 
   // === LOUPE DOM ===
 
+  // Attach overlays to <html> rather than <body> to escape any transformed
+  // ancestor that would break `position: fixed` anchoring (Google's Quick
+  // Settings / dialogs apply transforms on body wrappers, causing the loupe
+  // to be visually offset and to look "stuck" on modal edges).
+  function loupeRoot() {
+    return document.documentElement || document.body;
+  }
+
   function createLoupe() {
     if (loupe) return;
     loupe = document.createElement('div');
@@ -258,7 +268,17 @@
     zoomLabel.style.display = 'none';
     loupe.appendChild(zoomLabel);
 
-    document.body.appendChild(loupe);
+    loupeRoot().appendChild(loupe);
+  }
+
+  // Re-attach the loupe to <html> if something moved it (or if its current
+  // offsetParent is a transformed ancestor). Cheap to call.
+  function ensureLoupeAttachedToRoot() {
+    if (!loupe) return;
+    const root = loupeRoot();
+    if (loupe.parentNode !== root) {
+      try { root.appendChild(loupe); } catch (e) {}
+    }
   }
 
   function applyLoupeSize() {
@@ -295,7 +315,7 @@
       '<line x1="8" y1="5.5" x2="8" y2="10.5" stroke="#333" stroke-width="1.3"/>' +
       '</svg>';
     pendingIndicator.style.display = 'none';
-    document.body.appendChild(pendingIndicator);
+    loupeRoot().appendChild(pendingIndicator);
   }
 
   function showPendingIndicator(el) {
@@ -317,7 +337,7 @@
     if (!cursorRing) {
       cursorRing = document.createElement('div');
       cursorRing.id = 'loupe-cursor-ring';
-      document.body.appendChild(cursorRing);
+      loupeRoot().appendChild(cursorRing);
     }
     cursorRing.style.left = x + 'px';
     cursorRing.style.top = y + 'px';
@@ -509,6 +529,7 @@
 
   function updateLoupe() {
     if ((state !== 'active_mouse' && state !== 'active_focus' && state !== 'active_magnifier') || !loupe || !currentImg) return;
+    ensureLoupeAttachedToRoot();
 
     const isFocus = state === 'active_focus';
     const isMagnifier = state === 'active_magnifier';
@@ -560,6 +581,24 @@
     loupe.style.backgroundSize = bgW + 'px ' + bgH + 'px';
     loupe.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
 
+    // === Anti-transform compensation (defense in depth) ===
+    // Even though the loupe is attached to <html>, some sites apply a
+    // transform on <html> itself, which still creates a containing block
+    // for fixed elements. Detect a center-vs-cursor mismatch and offset
+    // left/top to compensate so the loupe stays exactly under the cursor.
+    try {
+      const rect = loupe.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = loupeLeft - centerX;
+      const dy = loupeTop - centerY;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        loupe.style.left = (loupeLeft + dx) + 'px';
+        loupe.style.top = (loupeTop + dy) + 'px';
+        if (LOUPE_DEBUG) dbgLog(`COMPENSATE dx=${dx.toFixed(1)} dy=${dy.toFixed(1)} (transformed ancestor detected)`);
+      }
+    } catch (e) {}
+
     if (LOUPE_DEBUG) {
       const now = Date.now();
       if (now - _dbgLastUpdateLog > 250) {
@@ -591,12 +630,14 @@
     mouseY = e.clientY;
     if (LOUPE_DEBUG) {
       const now = Date.now();
+      // Detect overlay enter/exit transitions and force-recapture
       try {
         const elNow = getDeepElementFromPoint(e.clientX, e.clientY);
         const inOv = !!(elNow && elNow.closest && elNow.closest('[role="dialog"],[role="listbox"],[role="menu"],[aria-modal="true"]'));
         if (inOv !== _dbgLastInOverlay) {
           _dbgLastInOverlay = inOv;
           dbgLog(`>>> OVERLAY TRANSITION: ${inOv ? 'ENTER' : 'EXIT'} at (${e.clientX},${e.clientY}) target=${dbgDescribeEl(elNow)} -- forcing recapture`);
+          // Force a fresh capture so the loupe content reflects the new modal
           if (state === 'active_mouse' || state === 'active_focus') {
             doCapture(() => updateLoupe());
           }
@@ -606,9 +647,10 @@
         _dbgLastMoveLog = now;
         let el = null;
         try { el = getDeepElementFromPoint(e.clientX, e.clientY); } catch (err) {}
-        const phaseInfo = `phase=${e.eventPhase} type=${e.type} target=${dbgDescribeEl(e.target)}`;
+        const eventTarget = e.target;
+        const phaseInfo = `phase=${e.eventPhase} type=${e.type} target=${dbgDescribeEl(eventTarget)}`;
         const overlayInfo = `deep=${dbgDescribeEl(el)}`;
-        const sameAsTarget = el === e.target ? 'same-as-target' : 'DIFFERENT-from-target';
+        const sameAsTarget = el === eventTarget ? 'same-as-target' : 'DIFFERENT-from-target';
         dbgLog(`mousemove @${e.clientX},${e.clientY} state=${state} | ${phaseInfo} | ${overlayInfo} | ${sameAsTarget}`);
       }
     }
@@ -675,6 +717,7 @@
     function deferModeTransition(fn) {
       try { if (loupe) loupe.style.visibility = 'hidden'; } catch (e) {}
       currentImg = null;
+      // Two rAFs + a small timeout to let body.style.zoom reflow finish.
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setTimeout(() => {
@@ -693,6 +736,7 @@
         ensurePageZoomAtLeast(base + 10);
         focusZoom = newZoom;
         zoom = newZoom;
+        // Find a focusable element near the mouse position
         let elAtMouse = getDeepElementFromPoint(mouseX, mouseY);
         let focusable = elAtMouse;
         while (focusable && focusable !== document.body && !isActivatableElement(focusable)) {
@@ -737,6 +781,7 @@
     // --- Downward transitions ---
     if (delta < 0) {
       if (state === 'active_magnifier' && newZoom < MAGNIFIER_ZOOM_MIN) {
+        // Magnifier ×8 → Focus ×7: set browser zoom to base + 10
         const zoomChanged = getCurrentPageZoomPercent() !== base + 10;
         setPageZoomPercent(base + 10);
         focusZoom = newZoom;
@@ -758,13 +803,15 @@
         return;
       }
       if (state === 'active_focus' && newZoom < FOCUS_ZOOM_MIN) {
-        // unused
+        // Focus ×2 → Mouse ×... we cap at FOCUS_ZOOM_MIN already; this branch unused.
       }
       if (state === 'active_focus' && newZoom <= MOUSE_ZOOM_MAX - 1) {
+        // Focus ×4 → Mouse ×3: restore browser zoom to base (initial)
         const zoomChanged = getCurrentPageZoomPercent() !== base;
         setPageZoomPercent(base);
         mouseZoom = newZoom;
         zoom = newZoom;
+        // Position mouse near the focused element so the loupe appears there
         if (focusTarget) {
           try {
             const rect = focusTarget.getBoundingClientRect();
@@ -1789,16 +1836,6 @@
     }
   }, true);
 
-  // Ctrl+Shift+D → toggle Loupe debug mode
-  window.addEventListener('keydown', (e) => {
-    const isDbgCombo = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd' || e.code === 'KeyD');
-    if (!isDbgCombo) return;
-    if (isEditableTarget(e.target)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setDebugMode(!LOUPE_DEBUG);
-  }, true);
-
 
   function findActivableAncestor(el) {
     let cur = el;
@@ -2027,6 +2064,16 @@
     e.preventDefault();
     e.stopPropagation();
     try { toggle(); } catch (err) {}
+  }, true);
+
+  // Ctrl+Shift+D → toggle Loupe debug mode
+  window.addEventListener('keydown', (e) => {
+    const isDbgCombo = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd' || e.code === 'KeyD');
+    if (!isDbgCombo) return;
+    if (isEditableTarget(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDebugMode(!LOUPE_DEBUG);
   }, true);
 
   // === MESSAGES FROM BACKGROUND / POPUP ===
