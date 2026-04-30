@@ -580,6 +580,24 @@
     loupe.style.backgroundSize = bgW + 'px ' + bgH + 'px';
     loupe.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
 
+    // === Anti-transform compensation (defense in depth) ===
+    // Even though the loupe is attached to <html>, some sites apply a
+    // transform on <html> itself, which still creates a containing block
+    // for fixed elements. Detect a center-vs-cursor mismatch and offset
+    // left/top to compensate so the loupe stays exactly under the cursor.
+    try {
+      const rect = loupe.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = loupeLeft - centerX;
+      const dy = loupeTop - centerY;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        loupe.style.left = (loupeLeft + dx) + 'px';
+        loupe.style.top = (loupeTop + dy) + 'px';
+        if (LOUPE_DEBUG) dbgLog(`COMPENSATE dx=${dx.toFixed(1)} dy=${dy.toFixed(1)} (transformed ancestor detected)`);
+      }
+    } catch (e) {}
+
     if (LOUPE_DEBUG) {
       const now = Date.now();
       if (now - _dbgLastUpdateLog > 250) {
