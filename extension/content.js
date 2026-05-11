@@ -105,6 +105,8 @@
           button: 0
         });
       } catch (err) {}
+    } else if (adjusted.type === 'keydown_toggle') {
+      try { toggle(); } catch (err) {}
     }
   }, true);
 
