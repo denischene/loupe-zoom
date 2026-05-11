@@ -56,7 +56,9 @@
     {
       "matches": ["<all_urls>", "file:///*"],
       "js": ["content.js"],
-      "css": ["loupe.css"]
+      "css": ["loupe.css"],
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "icons": {
