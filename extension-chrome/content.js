@@ -55,6 +55,85 @@
     });
   } catch (e) {}
 
+  // === IFRAME FORWARDER (v4.15) ===
+  // The loupe lives in the top frame only. Child frames simply forward their
+  // local mouse events (and keyboard toggles) to their parent via postMessage.
+  // The top frame translates the coords into top-viewport space using the
+  // sending iframe's bounding rect. This unblocks magnification when the
+  // cursor enters an iframe (e.g. modal embedded as iframe, YouTube embeds,
+  // Stripe forms), where the top frame would otherwise stop receiving
+  // mousemove events and leave the loupe frozen at the iframe edge.
+  const IS_TOP_FRAME = (function () {
+    try { return window === window.top; } catch (_) { return false; }
+  })();
+
+  function postLoupeMessageToParent(payload) {
+    try { window.parent.postMessage(Object.assign({ __loupeIframe: true }, payload), '*'); } catch (_) {}
+  }
+
+  // Listener installed in EVERY frame: relays child→parent, or in the top
+  // frame, dispatches synthesized events into the local handlers.
+  window.addEventListener('message', (e) => {
+    const d = e && e.data;
+    if (!d || d.__loupeIframe !== true) return;
+    // Locate the child iframe element matching the source window
+    let frameEl = null;
+    try {
+      const iframes = document.querySelectorAll('iframe,frame');
+      for (const f of iframes) {
+        try { if (f.contentWindow === e.source) { frameEl = f; break; } } catch (_) {}
+      }
+    } catch (_) {}
+    if (!frameEl) return;
+    let rect;
+    try { rect = frameEl.getBoundingClientRect(); } catch (_) { return; }
+    const adjusted = Object.assign({}, d, {
+      x: rect.left + (d.x || 0),
+      y: rect.top + (d.y || 0)
+    });
+    if (!IS_TOP_FRAME) {
+      postLoupeMessageToParent(adjusted);
+      return;
+    }
+    // Top frame: synthesize a mouse event into onMove (hoisted)
+    if (adjusted.type === 'mousemove') {
+      try {
+        onMove({
+          clientX: adjusted.x, clientY: adjusted.y,
+          target: frameEl, type: 'mousemove', eventPhase: 0,
+          ctrlKey: !!adjusted.ctrlKey, shiftKey: !!adjusted.shiftKey,
+          button: 0
+        });
+      } catch (err) {}
+    } else if (adjusted.type === 'keydown_toggle') {
+      try { toggle(); } catch (err) {}
+    }
+  }, true);
+
+  if (!IS_TOP_FRAME) {
+    // Forward local mouse events upward; do NOT instantiate the loupe here.
+    const FWD = ['mousemove', 'pointermove'];
+    FWD.forEach((evt) => {
+      try {
+        window.addEventListener(evt, (e) => {
+          postLoupeMessageToParent({
+            type: 'mousemove',
+            x: e.clientX, y: e.clientY,
+            ctrlKey: !!e.ctrlKey, shiftKey: !!e.shiftKey
+          });
+        }, true);
+      } catch (_) {}
+    });
+    // Also forward Ctrl+Shift+Z so the toggle works when focus is in an iframe
+    try {
+      window.addEventListener('keydown', (e) => {
+        const isToggle = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'Z' || e.key === 'z' || e.code === 'KeyZ');
+        if (!isToggle) return;
+        postLoupeMessageToParent({ type: 'keydown_toggle' });
+      }, true);
+    } catch (_) {}
+    return; // Stop here in iframes — no loupe DOM, no capture, no listeners.
+  }
 
   let loupe = null;
   let zoomLabel = null;

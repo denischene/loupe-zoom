@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Loupe Zoom",
-  "version": "4.14.0",
+  "version": "4.15.0",
   "description": "Loupe de zoom (souris, focus-clavier, agrandisseur). Raccourci Ctrl+Maj+Z pour activer/désactiver. Compatible PDF.",
   "author": "Chêne Denis",
   "homepage_url": "https://loupe-zoom.lovable.app",
@@ -34,7 +34,9 @@
     {
       "matches": ["<all_urls>", "file:///*"],
       "js": ["browser-polyfill.js", "content.js"],
-      "css": ["loupe.css"]
+      "css": ["loupe.css"],
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "web_accessible_resources": [
