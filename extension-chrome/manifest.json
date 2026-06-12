@@ -28,7 +28,7 @@
       "suggested_key": {
         "default": "Ctrl+Shift+Z"
       },
-      "description": "Activer/désactiver la loupe"
+      "description": "__MSG_cmdToggleDesc__"
     }
   },
   "content_scripts": [
