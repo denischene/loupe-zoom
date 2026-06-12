@@ -1,0 +1,46 @@
+{
+  "extName": { "message": "Loupe Zoom" },
+  "extDesc": { "message": "Loupe de zoom (souris, focus-clavier, agrandisseur). Raccourci Ctrl+Maj+Z pour activer/désactiver. Compatible PDF." },
+  "actionTitle": { "message": "Loupe Zoom (Ctrl+Maj+Z)" },
+  "cmdToggleDesc": { "message": "Activer/désactiver la loupe" },
+
+  "appName": { "message": "Loupe Zoom" },
+  "mouseMode": { "message": "Loupe souris" },
+  "focusMode": { "message": "Focus-loupe" },
+  "magnifierMode": { "message": "Agrandisseur" },
+  "tierEasy": { "message": "Facile+" },
+  "tierVision": { "message": "Vision+" },
+  "tierVisionPP": { "message": "Vision++" },
+
+  "hintMouse": { "message": "Ctrl+molette pour changer le zoom" },
+  "hintFocus": { "message": "Tabulation pour avancer et +/− pour changer le zoom" },
+  "hintMagnifier": { "message": "Flèches pour naviguer" },
+  "zoomLabel": { "message": "Zoom" },
+
+  "activateMouse": { "message": "Activer la Loupe souris" },
+  "deactivateMouse": { "message": "Désactiver la Loupe souris" },
+  "activateFocus": { "message": "Activer le Focus-loupe" },
+  "deactivateFocus": { "message": "Désactiver le Focus-loupe" },
+  "activateMagnifier": { "message": "Activer l'Agrandisseur" },
+  "deactivateMagnifier": { "message": "Désactiver l'Agrandisseur" },
+  "activateExtension": { "message": "Activer l’extension" },
+  "deactivateExtension": { "message": "Désactiver l’extension" },
+  "extensionActive": { "message": "Extension active" },
+
+  "kMaj": { "message": "Maj" },
+  "kEnter": { "message": "Entrée" },
+  "kEsc": { "message": "Échap." },
+  "scToggle": { "message": "Activer/Désactiver" },
+  "scShow": { "message": "Afficher la loupe" },
+  "scHide": { "message": "Masquer" },
+
+  "debugActivate": { "message": "🐞 Activer le mode débogage" },
+  "debugDeactivate": { "message": "🐞 ✔ Désactiver le mode débogage" },
+
+  "optTitle": { "message": "🔍 Loupe Zoom — Réglages" },
+  "optMouseHeading": { "message": "🖱️ Loupe souris" },
+  "optFocusHeading": { "message": "⌨️ Focus-loupe" },
+  "optMagnifierHeading": { "message": "🔎 Agrandisseur" },
+  "optDefaultZoom": { "message": "Zoom par défaut" },
+  "optSaved": { "message": "✓ Enregistré" }
+}

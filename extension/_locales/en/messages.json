@@ -1,0 +1,46 @@
+{
+  "extName": { "message": "Magnifying glass-Zoom" },
+  "extDesc": { "message": "Zoom magnifier (mouse, keyboard focus, full-screen). Ctrl+Shift+Z to toggle. PDF compatible." },
+  "actionTitle": { "message": "Magnifying glass-Zoom (Ctrl+Shift+Z)" },
+  "cmdToggleDesc": { "message": "Toggle the magnifier" },
+
+  "appName": { "message": "Magnifying glass-Zoom" },
+  "mouseMode": { "message": "Mouse magnifier" },
+  "focusMode": { "message": "Focus-magnifier" },
+  "magnifierMode": { "message": "Magnifier" },
+  "tierEasy": { "message": "Easy+" },
+  "tierVision": { "message": "Vision+" },
+  "tierVisionPP": { "message": "Vision++" },
+
+  "hintMouse": { "message": "Ctrl+wheel to change zoom" },
+  "hintFocus": { "message": "Tab to move forward, +/− to change zoom" },
+  "hintMagnifier": { "message": "Arrow keys to navigate" },
+  "zoomLabel": { "message": "Zoom" },
+
+  "activateMouse": { "message": "Turn on the Mouse magnifier" },
+  "deactivateMouse": { "message": "Turn off the Mouse magnifier" },
+  "activateFocus": { "message": "Turn on the Focus-magnifier" },
+  "deactivateFocus": { "message": "Turn off the Focus-magnifier" },
+  "activateMagnifier": { "message": "Turn on the Magnifier" },
+  "deactivateMagnifier": { "message": "Turn off the Magnifier" },
+  "activateExtension": { "message": "Turn on the extension" },
+  "deactivateExtension": { "message": "Turn off the extension" },
+  "extensionActive": { "message": "Extension active" },
+
+  "kMaj": { "message": "Shift" },
+  "kEnter": { "message": "Enter" },
+  "kEsc": { "message": "Esc" },
+  "scToggle": { "message": "On/Off" },
+  "scShow": { "message": "Show magnifier" },
+  "scHide": { "message": "Hide" },
+
+  "debugActivate": { "message": "🐞 Turn on debug mode" },
+  "debugDeactivate": { "message": "🐞 ✔ Turn off debug mode" },
+
+  "optTitle": { "message": "🔍 Magnifying glass-Zoom — Settings" },
+  "optMouseHeading": { "message": "🖱️ Mouse magnifier" },
+  "optFocusHeading": { "message": "⌨️ Focus-magnifier" },
+  "optMagnifierHeading": { "message": "🔎 Magnifier" },
+  "optDefaultZoom": { "message": "Default zoom" },
+  "optSaved": { "message": "✓ Saved" }
+}

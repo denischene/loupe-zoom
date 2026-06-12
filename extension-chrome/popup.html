@@ -240,17 +240,17 @@
 </head>
 <body>
   <div class="header">
-    <h2><img src="icon.png" alt=""> Loupe Zoom</h2>
+    <h2><img src="icon.png" alt=""> <span data-i18n="appName">Loupe Zoom</span></h2>
   </div>
 
   <div class="section">
     <div class="section-title">
-      <span><span class="mode-icon" aria-hidden="true">🔎</span>Loupe souris</span>
-      <span class="section-subtitle">Facile+</span>
+      <span><span class="mode-icon" aria-hidden="true">🔎</span><span data-i18n="mouseMode">Loupe souris</span></span>
+      <span class="section-subtitle" data-i18n="tierEasy">Facile+</span>
     </div>
-    <span class="section-hint">Ctrl+molette pour changer le zoom</span>
+    <span class="section-hint" data-i18n="hintMouse">Ctrl+molette pour changer le zoom</span>
     <div class="zoom-row">
-      <label for="mouse-zoom">Zoom</label>
+      <label for="mouse-zoom" data-i18n="zoomLabel">Zoom</label>
       <select id="mouse-zoom"></select>
     </div>
     <button class="activate-btn" id="activate-mouse">Activer la Loupe souris</button>
@@ -260,12 +260,12 @@
     <div class="section-title">
       <span><span class="mode-icon" aria-hidden="true">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M7 17h10"/></svg>
-      </span>Focus-loupe</span>
-      <span class="section-subtitle">Vision+</span>
+      </span><span data-i18n="focusMode">Focus-loupe</span></span>
+      <span class="section-subtitle" data-i18n="tierVision">Vision+</span>
     </div>
-    <span class="section-hint">Tabulation pour avancer et +/− pour changer le zoom</span>
+    <span class="section-hint" data-i18n="hintFocus">Tabulation pour avancer et +/− pour changer le zoom</span>
     <div class="zoom-row">
-      <label for="focus-zoom">Zoom</label>
+      <label for="focus-zoom" data-i18n="zoomLabel">Zoom</label>
       <select id="focus-zoom"></select>
     </div>
     <button class="activate-btn" id="activate-focus">Activer le Focus-loupe</button>
@@ -275,20 +275,20 @@
     <div class="section-title">
       <span><span class="mode-icon" aria-hidden="true">
         <svg width="20" height="16" viewBox="0 0 28 20" fill="none" stroke-width="2"><rect x="1.5" y="1.5" width="25" height="17" rx="3.5"/><text x="14" y="15" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800">A</text></svg>
-      </span>Agrandisseur</span>
-      <span class="section-subtitle">Vision++</span>
+      </span><span data-i18n="magnifierMode">Agrandisseur</span></span>
+      <span class="section-subtitle" data-i18n="tierVisionPP">Vision++</span>
     </div>
-    <span class="section-hint">Flèches pour naviguer</span>
+    <span class="section-hint" data-i18n="hintMagnifier">Flèches pour naviguer</span>
     <div class="zoom-row">
-      <label for="magnifier-zoom">Zoom</label>
+      <label for="magnifier-zoom" data-i18n="zoomLabel">Zoom</label>
       <select id="magnifier-zoom"></select>
     </div>
     <button class="activate-btn" id="activate-magnifier">Activer l'Agrandisseur</button>
   </div>
 
   <div class="shortcut">
-    <kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd> Activer/Désactiver<br>
-    <kbd>Entrée</kbd> Afficher la loupe · <kbd>Échap.</kbd> Masquer
+    <kbd>Ctrl</kbd>+<kbd data-i18n="kMaj">Maj</kbd>+<kbd>Z</kbd> <span data-i18n="scToggle">Activer/Désactiver</span><br>
+    <kbd data-i18n="kEnter">Entrée</kbd> <span data-i18n="scShow">Afficher la loupe</span> · <kbd data-i18n="kEsc">Échap.</kbd> <span data-i18n="scHide">Masquer</span>
   </div>
 
   <div class="global-toggle-wrap">

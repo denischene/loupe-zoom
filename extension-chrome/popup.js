@@ -1,11 +1,20 @@
 (() => {
-  // Refresh the toolbar icon based on the popup's color scheme. The popup
-  // honors the system theme even on internal Edge pages where no content
-  // script can report it.
-  try {
-    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    chrome.runtime.sendMessage({ type: 'set_theme_icon', dark });
-  } catch (e) {}
+  const i18n = (typeof browser !== 'undefined' && browser.i18n) ? browser.i18n
+    : (typeof chrome !== 'undefined' && chrome.i18n) ? chrome.i18n : null;
+  const t = (key, fallback) => {
+    if (i18n) {
+      const m = i18n.getMessage(key);
+      if (m) return m;
+    }
+    return fallback || '';
+  };
+
+  // Apply static translations (data-i18n attributes)
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    const msg = t(key, el.textContent);
+    if (msg) el.textContent = msg;
+  });
 
   const mouseSelect = document.getElementById('mouse-zoom');
   const focusSelect = document.getElementById('focus-zoom');
@@ -51,44 +60,47 @@
 
     // Mouse button
     if (state === 'active_mouse') {
-      activateMouseBtn.textContent = CHECK + 'Désactiver la Loupe souris';
+      activateMouseBtn.textContent = CHECK + t('deactivateMouse', 'Désactiver la Loupe souris');
       activateMouseBtn.classList.add('deactivate');
     } else {
-      activateMouseBtn.textContent = 'Activer la Loupe souris';
+      activateMouseBtn.textContent = t('activateMouse', 'Activer la Loupe souris');
       activateMouseBtn.classList.remove('deactivate');
     }
 
     // Focus button
     if (state === 'active_focus') {
-      activateFocusBtn.textContent = CHECK + 'Désactiver le Focus-loupe';
+      activateFocusBtn.textContent = CHECK + t('deactivateFocus', 'Désactiver le Focus-loupe');
       activateFocusBtn.classList.add('deactivate');
     } else {
-      activateFocusBtn.textContent = 'Activer le Focus-loupe';
+      activateFocusBtn.textContent = t('activateFocus', 'Activer le Focus-loupe');
       activateFocusBtn.classList.remove('deactivate');
     }
 
     // Magnifier button
     if (state === 'active_magnifier') {
-      activateMagnifierBtn.textContent = CHECK + "Désactiver l'Agrandisseur";
+      activateMagnifierBtn.textContent = CHECK + t('deactivateMagnifier', "Désactiver l'Agrandisseur");
       activateMagnifierBtn.classList.add('deactivate');
     } else {
-      activateMagnifierBtn.textContent = "Activer l'Agrandisseur";
+      activateMagnifierBtn.textContent = t('activateMagnifier', "Activer l'Agrandisseur");
       activateMagnifierBtn.classList.remove('deactivate');
     }
 
     toggleExtensionBtn.classList.remove('deactivate', 'neutral');
     toggleExtensionBtn.disabled = false;
     if (state === 'pending') {
-      toggleExtensionBtn.textContent = CHECK + 'Désactiver l’extension';
+      toggleExtensionBtn.textContent = CHECK + t('deactivateExtension', 'Désactiver l’extension');
       toggleExtensionBtn.classList.add('deactivate');
     } else if (state === 'active_mouse' || state === 'active_focus' || state === 'active_magnifier') {
-      toggleExtensionBtn.textContent = CHECK + 'Extension active';
+      toggleExtensionBtn.textContent = CHECK + t('extensionActive', 'Extension active');
       toggleExtensionBtn.classList.add('neutral');
       toggleExtensionBtn.disabled = true;
     } else {
-      toggleExtensionBtn.textContent = 'Activer l’extension';
+      toggleExtensionBtn.textContent = t('activateExtension', 'Activer l’extension');
     }
   }
+
+  // Initialise button labels in the active language
+  updateButtons('off');
 
   // Check current state
   browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
@@ -99,56 +111,51 @@
     }
   });
 
-  function sendToActiveTab(msg) {
-    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-      if (!tabs[0]) return;
-      const tabId = tabs[0].id;
-      const url = tabs[0].url || '';
-      const isViewer = url.indexOf(chrome.runtime.getURL('pdfjs/web/viewer.html')) === 0;
-      const isPdf = !isViewer && (/\.pdf($|\?|#)/i.test(url) || url.startsWith('file://'));
-      const send = () => browser.tabs.sendMessage(tabId, msg).catch(() => {});
-      if (isPdf && chrome.scripting) {
-        // Force-inject for PDF pages where content_scripts may not auto-load.
-        chrome.scripting.insertCSS({ target: { tabId }, files: ['loupe.css'] }).catch(() => {});
-        chrome.scripting.executeScript({
-          target: { tabId },
-          files: ['browser-polyfill.js', 'content.js']
-        }).then(send, send);
-      } else {
-        send();
+  async function sendToActiveTab(msg) {
+    try {
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]) {
+        // If switching from another active mode, deactivate first so the
+        // content script properly tears down focus/magnifier state before
+        // entering the new mode. (Firefox needs this explicit sequence.)
+        if ((msg.type === 'activate_mouse' || msg.type === 'activate_focus' || msg.type === 'activate_magnifier')
+            && currentState && currentState !== 'off' && currentState !== msg.type) {
+          try { await browser.tabs.sendMessage(tabs[0].id, { type: 'deactivate' }); } catch (e) {}
+        }
+        try { await browser.tabs.sendMessage(tabs[0].id, msg); } catch (e) {}
       }
-    });
+    } catch (e) {}
   }
 
   // Activate buttons
-  activateMouseBtn.addEventListener('click', () => {
+  activateMouseBtn.addEventListener('click', async () => {
     if (currentState === 'active_mouse') {
-      sendToActiveTab({ type: 'deactivate' });
+      await sendToActiveTab({ type: 'deactivate' });
       updateButtons('off');
     } else {
-      sendToActiveTab({ type: 'activate_mouse' });
+      await sendToActiveTab({ type: 'activate_mouse' });
       updateButtons('active_mouse');
     }
     window.close();
   });
 
-  activateFocusBtn.addEventListener('click', () => {
+  activateFocusBtn.addEventListener('click', async () => {
     if (currentState === 'active_focus') {
-      sendToActiveTab({ type: 'deactivate' });
+      await sendToActiveTab({ type: 'deactivate' });
       updateButtons('off');
     } else {
-      sendToActiveTab({ type: 'activate_focus' });
+      await sendToActiveTab({ type: 'activate_focus' });
       updateButtons('active_focus');
     }
     window.close();
   });
 
-  activateMagnifierBtn.addEventListener('click', () => {
+  activateMagnifierBtn.addEventListener('click', async () => {
     if (currentState === 'active_magnifier') {
-      sendToActiveTab({ type: 'deactivate' });
+      await sendToActiveTab({ type: 'deactivate' });
       updateButtons('off');
     } else {
-      sendToActiveTab({ type: 'activate_magnifier' });
+      await sendToActiveTab({ type: 'activate_magnifier' });
       updateButtons('active_magnifier');
     }
     window.close();
@@ -193,10 +200,10 @@
   let debugOn = false;
   function updateDebugBtn() {
     if (debugOn) {
-      toggleDebugBtn.textContent = '🐞 ✔ Désactiver le mode débogage';
+      toggleDebugBtn.textContent = t('debugDeactivate', '🐞 ✔ Désactiver le mode débogage');
       toggleDebugBtn.classList.add('deactivate');
     } else {
-      toggleDebugBtn.textContent = '🐞 Activer le mode débogage';
+      toggleDebugBtn.textContent = t('debugActivate', '🐞 Activer le mode débogage');
       toggleDebugBtn.classList.remove('deactivate');
     }
   }
@@ -204,14 +211,15 @@
     debugOn = !!(d && d.loupeDebug);
     updateDebugBtn();
   });
-  toggleDebugBtn.addEventListener('click', () => {
+  toggleDebugBtn.addEventListener('click', async () => {
     debugOn = !debugOn;
     updateDebugBtn();
-    try { browser.storage.local.set({ loupeDebug: debugOn }); } catch (e) {}
-    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+    try { await browser.storage.local.set({ loupeDebug: debugOn }); } catch (e) {}
+    try {
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       if (tabs[0]) {
-        browser.tabs.sendMessage(tabs[0].id, { type: 'set_debug', value: debugOn }).catch(() => {});
+        try { await browser.tabs.sendMessage(tabs[0].id, { type: 'set_debug', value: debugOn }); } catch (e) {}
       }
-    });
+    } catch (e) {}
   });
 })();
