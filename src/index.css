@@ -17,17 +17,17 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* ===== Mode clair ===== */
-    --background: 0 0% 96.5%;      /* #F6F6F6 */
+    --background: 0 0% 93.3%;      /* #EEEEEE (fond de page) */
     --foreground: 0 0% 0%;         /* noir */
 
     --card: 0 0% 80%;              /* #CCCCCC */
     --card-foreground: 0 0% 0%;
 
-    --popover: 0 0% 96.5%;
+    --popover: 0 0% 93.3%;
     --popover-foreground: 0 0% 0%;
 
-    --primary: 24 100% 50%;        /* #FF6600 (titres + boutons) */
-    --primary-foreground: 0 0% 0%; /* texte noir sur orange */
+    --primary: 0 0% 0%;            /* titres en noir (mode clair) */
+    --primary-foreground: 0 0% 100%; /* texte blanc sur primary noir */
 
     --secondary: 0 0% 80%;
     --secondary-foreground: 0 0% 0%;
@@ -41,8 +41,8 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 0%;            /* liserés noirs */
-    --input: 0 0% 0%;
+    --border: 24 100% 50%;        /* liserés #FF6600 */
+    --input: 24 100% 50%;
     --ring: 24 100% 50%;
 
     --radius: 0.5rem;
