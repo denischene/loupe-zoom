@@ -10,10 +10,16 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "loupe-zoom@lovable.app",
-      "strict_min_version": "113.0"
+      "strict_min_version": "113.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     },
     "gecko_android": {
-      "strict_min_version": "113.0"
+      "strict_min_version": "113.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "background": {
@@ -22,20 +28,20 @@
   },
   "browser_action": {
     "default_icon": {
-      "48": "icon.png",
-      "128": "icon.png"
+      "48": "icon-48.png",
+      "128": "icon-128.png"
     },
     "default_title": "Loupe Zoom (Ctrl+Maj+Z)",
     "default_popup": "popup.html",
     "theme_icons": [
       {
-        "light": "icon-light.png",
-        "dark": "icon.png",
+        "light": "icon-light-48.png",
+        "dark": "icon-48.png",
         "size": 48
       },
       {
-        "light": "icon-light.png",
-        "dark": "icon.png",
+        "light": "icon-light-128.png",
+        "dark": "icon-128.png",
         "size": 128
       }
     ]
@@ -62,7 +68,7 @@
     }
   ],
   "icons": {
-    "48": "icon-both.png",
-    "128": "icon-both.png"
+    "48": "icon-both-48.png",
+    "128": "icon-both-128.png"
   }
 }
