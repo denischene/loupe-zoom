@@ -16,33 +16,34 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 30 25% 97%;
-    --foreground: 25 30% 12%;
+    /* ===== Mode clair ===== */
+    --background: 0 0% 96.5%;      /* #F6F6F6 */
+    --foreground: 0 0% 0%;         /* noir */
 
-    --card: 30 20% 99%;
-    --card-foreground: 25 30% 12%;
+    --card: 0 0% 80%;              /* #CCCCCC */
+    --card-foreground: 0 0% 0%;
 
-    --popover: 30 20% 99%;
-    --popover-foreground: 25 30% 12%;
+    --popover: 0 0% 96.5%;
+    --popover-foreground: 0 0% 0%;
 
-    --primary: 25 60% 38%;
-    --primary-foreground: 30 25% 97%;
+    --primary: 24 100% 50%;        /* #FF6600 (titres + boutons) */
+    --primary-foreground: 0 0% 0%; /* texte noir sur orange */
 
-    --secondary: 30 20% 93%;
-    --secondary-foreground: 25 30% 18%;
+    --secondary: 0 0% 80%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 30 15% 93%;
-    --muted-foreground: 25 10% 45%;
+    --muted: 0 0% 80%;
+    --muted-foreground: 0 0% 20%;
 
-    --accent: 30 20% 90%;
-    --accent-foreground: 25 30% 18%;
+    --accent: 0 0% 80%;
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 30 15% 87%;
-    --input: 30 15% 87%;
-    --ring: 25 60% 38%;
+    --border: 0 0% 0%;            /* liserés noirs */
+    --input: 0 0% 0%;
+    --ring: 24 100% 50%;
 
     --radius: 0.5rem;
 
