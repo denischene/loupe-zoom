@@ -1,4 +1,31 @@
 (() => {
+  const i18n = (typeof browser !== 'undefined' && browser.i18n) ? browser.i18n
+    : (typeof chrome !== 'undefined' && chrome.i18n) ? chrome.i18n : null;
+  const t = (key, fallback) => {
+    if (i18n) {
+      const m = i18n.getMessage(key);
+      if (m) return m;
+    }
+    return fallback || '';
+  };
+
+  // Determine UI language ("follows the browser")
+  const uiLang = (i18n && i18n.getUILanguage ? i18n.getUILanguage() : navigator.language) || 'fr';
+  const lang = uiLang.toLowerCase().startsWith('fr') ? 'fr' : 'en';
+  document.documentElement.lang = lang;
+
+  // Apply static translations
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    const msg = t(key, el.textContent);
+    if (msg) el.textContent = msg;
+  });
+
+  // Show only the matching language blocks
+  document.querySelectorAll('[data-lang]').forEach((el) => {
+    el.hidden = el.getAttribute('data-lang') !== lang;
+  });
+
   const mouseSelect = document.getElementById('mouse-zoom');
   const focusSelect = document.getElementById('focus-zoom');
   const magnifierSelect = document.getElementById('magnifier-zoom');
