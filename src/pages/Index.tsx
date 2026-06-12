@@ -34,13 +34,12 @@ const Index = () => {
 
       {/* Hero */}
       <header className="pt-16 pb-10 px-6 text-center space-y-6 max-w-3xl mx-auto">
-        <img
-          src="/logo-loupe.png"
-          alt=""
-          width={80}
-          height={80}
-          className="mx-auto drop-shadow-md browser-dark-invert"
+        <div
+          role="img"
+          aria-label="Logo Loupe-Zoom"
+          className="logo-mask mx-auto drop-shadow-md"
         />
+
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary">
           Loupe-Zoom
         </h1>
