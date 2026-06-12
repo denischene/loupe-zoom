@@ -107,57 +107,72 @@ All colors MUST be HSL.
   }
 }
 
-/* Adaptation au mode sombre forcé par le navigateur (prefers-color-scheme). */
+/* ===== Indications de touches (kbd) : fond bleu, texte noir, bordure #F6F6F6 ===== */
+.key-hint {
+  background-color: #4f9bff !important;
+  color: #000000 !important;
+  border: 1px solid #F6F6F6 !important;
+  border-radius: 0.25rem;
+  padding: 0.05rem 0.4rem;
+  font-family: ui-monospace, monospace;
+}
+
+/* ===== Boutons de téléchargement : orange, texte noir ===== */
+.download-btn {
+  background-color: #FF6600 !important;
+  color: #000000 !important;
+  border: 2px solid #FF6600 !important;
+}
+.download-btn:hover {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+.download-btn:active {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+.download-btn:focus-visible {
+  outline: 3px solid #4f9bff;
+  outline-offset: 2px;
+}
+.download-btn svg { color: inherit !important; }
+
+/* Pictos des blocs : noir en mode clair (par défaut) */
+.mode-picto { color: #000000; }
+
+/* ===== Mode sombre (prefers-color-scheme) ===== */
 @media (prefers-color-scheme: dark) {
-  /* Re-bind semantic tokens so bg-background / bg-card / text-foreground
-     flip to a dark palette automatically on the presentation page. */
+  /* Re-bind semantic tokens : fond noir, blocs #444, liserés blancs, titres orange. */
   :root {
-    --background: 25 20% 8%;
-    --foreground: 30 15% 92%;
-    --card: 25 18% 12%;
+    --background: 0 0% 0%;          /* fond page noir */
+    --foreground: 30 15% 92%;       /* texte clair (inchangé) */
+    --card: 0 0% 26.7%;             /* #444444 */
     --card-foreground: 30 15% 92%;
-    --popover: 25 18% 12%;
+    --popover: 0 0% 10%;
     --popover-foreground: 30 15% 92%;
-    --primary: 210 100% 70%;
-    --primary-foreground: 25 20% 8%;
-    --secondary: 25 15% 18%;
+    --primary: 24 100% 50%;         /* #FF6600 */
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 26.7%;
     --secondary-foreground: 30 15% 92%;
-    --muted: 25 15% 22%;
-    --muted-foreground: 30 10% 78%;
-    --accent: 25 15% 22%;
+    --muted: 0 0% 26.7%;
+    --muted-foreground: 30 10% 82%;
+    --accent: 0 0% 26.7%;
     --accent-foreground: 30 15% 92%;
-    --border: 25 15% 30%;
-    --input: 25 15% 30%;
-    --ring: 210 100% 70%;
+    --border: 0 0% 100%;            /* liserés blancs */
+    --input: 0 0% 100%;
+    --ring: 24 100% 50%;
   }
 
-  /* Logo loupe et pictos en blanc */
+  /* Logo loupe : reste tel quel (clair) en mode sombre */
   .browser-dark-invert {
     filter: invert(1) hue-rotate(180deg);
   }
 
-  /* Outline-styled download buttons (link-coloured) */
-  .browser-dark-link-outline {
-    background-color: transparent !important;
-    color: hsl(210, 100%, 75%) !important;
-    border: 2px solid hsl(210, 100%, 70%) !important;
-  }
-  .browser-dark-link-outline:hover {
-    background-color: hsla(210, 100%, 70%, 0.12) !important;
-  }
-  .browser-dark-link-outline svg {
-    color: hsl(210, 100%, 75%) !important;
-  }
-
-  /* Override the hard-coded brown inline color used for body text on cards */
-  .browser-dark-text,
-  .browser-dark-text * {
-    color: hsl(30, 15%, 92%) !important;
-  }
-  .browser-dark-text kbd,
-  .browser-dark-text code {
-    color: hsl(210, 100%, 78%) !important;
-    background-color: hsl(25, 15%, 22%) !important;
-    border-color: hsl(25, 15%, 35%) !important;
+  /* Pictos des blocs en blanc */
+  .mode-picto {
+    color: #ffffff;
   }
 }
+
