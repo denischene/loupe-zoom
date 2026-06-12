@@ -32,7 +32,7 @@
       "48": "icon-48.png",
       "128": "icon-128.png"
     },
-    "default_title": "Loupe Zoom (Ctrl+Maj+Z)",
+    "default_title": "__MSG_actionTitle__",
     "default_popup": "popup.html",
     "theme_icons": [
       {
