@@ -101,34 +101,38 @@
   </style>
 </head>
 <body>
-  <h2>🔍 Loupe Zoom — Réglages</h2>
+  <h2 data-i18n="optTitle">🔍 Loupe Zoom — Réglages</h2>
 
   <div class="zoom-section">
-    <h3>🖱️ Loupe souris <small style="color:#888">(Facile+)</small></h3>
-    <label for="mouse-zoom">Zoom par défaut</label>
+    <h3><span data-i18n="optMouseHeading">🖱️ Loupe souris</span> <small style="color:#888">(<span data-i18n="tierEasy">Facile+</span>)</small></h3>
+    <label for="mouse-zoom" data-i18n="optDefaultZoom">Zoom par défaut</label>
     <select id="mouse-zoom"></select>
   </div>
 
   <div class="zoom-section">
-    <h3>⌨️ Focus-loupe <small style="color:#888">(Vision+)</small></h3>
-    <label for="focus-zoom">Zoom par défaut</label>
+    <h3><span data-i18n="optFocusHeading">⌨️ Focus-loupe</span> <small style="color:#888">(<span data-i18n="tierVision">Vision+</span>)</small></h3>
+    <label for="focus-zoom" data-i18n="optDefaultZoom">Zoom par défaut</label>
     <select id="focus-zoom"></select>
   </div>
 
   <div class="zoom-section">
-    <h3>🔎 Agrandisseur <small style="color:#888">(Vision++)</small></h3>
-    <label for="magnifier-zoom">Zoom par défaut</label>
+    <h3><span data-i18n="optMagnifierHeading">🔎 Agrandisseur</span> <small style="color:#888">(<span data-i18n="tierVisionPP">Vision++</span>)</small></h3>
+    <label for="magnifier-zoom" data-i18n="optDefaultZoom">Zoom par défaut</label>
     <select id="magnifier-zoom"></select>
   </div>
 
-  <div class="saved" id="saved-msg">✓ Enregistré</div>
+  <div class="saved" id="saved-msg" data-i18n="optSaved">✓ Enregistré</div>
 
-  <div class="info">
+  <div class="info" data-lang="fr">
     Pour modifier le raccourci clavier, allez dans<br>
-    <strong>about:addons → ⚙️ → Gérer les raccourcis d'extension</strong>
+    <strong>Extensions → Raccourcis clavier</strong>
+  </div>
+  <div class="info" data-lang="en" hidden>
+    To change the keyboard shortcut, go to<br>
+    <strong>Extensions → Keyboard shortcuts</strong>
   </div>
 
-  <div class="commands">
+  <div class="commands" data-lang="fr">
     <h3>⌨️ Mode Clavier</h3>
     <ol>
       <li><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd> pour activer/désactiver l'extension loupe. Une fois activée, un petit logo loupe apparaît alors au-dessus du focus.</li>
@@ -143,6 +147,24 @@
       <li>Clic droit pour faire disparaître la loupe. Elle reste disponible au bout de la souris. Il suffit de faire un 1<sup>er</sup> clic pour la faire réapparaître.</li>
       <li>Un 2<sup>e</sup> clic depuis la loupe visible valide l'élément (hyperlien, bouton…)</li>
       <li><kbd>Ctrl</kbd>+<kbd>molette haut-bas</kbd> permet de changer de niveau de zoom.</li>
+    </ol>
+  </div>
+
+  <div class="commands" data-lang="en" hidden>
+    <h3>⌨️ Keyboard mode</h3>
+    <ol>
+      <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> to toggle the magnifier extension. Once on, a small magnifier logo appears above the focus.</li>
+      <li><kbd>Enter</kbd> to show the magnifier. When the magnifier is on, pressing <kbd>Enter</kbd> on an activable element (link, button) activates it.</li>
+      <li><kbd>Esc</kbd> to hide the magnifier.</li>
+      <li><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> to move the focus from element to element.</li>
+    </ol>
+
+    <h3>🖱️ Mouse mode</h3>
+    <ol>
+      <li>Click the Loupe icon in the toolbar to turn the magnifier on/off.</li>
+      <li>Right-click to hide the magnifier. It stays available at the mouse tip. A first click brings it back.</li>
+      <li>A 2<sup>nd</sup> click from the visible magnifier activates the element (link, button…).</li>
+      <li><kbd>Ctrl</kbd>+<kbd>wheel up/down</kbd> changes the zoom level.</li>
     </ol>
   </div>
 
