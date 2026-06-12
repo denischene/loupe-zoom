@@ -142,6 +142,16 @@ All colors MUST be HSL.
 /* Pictos des blocs : noir en mode clair (par défaut) */
 .mode-picto { color: #000000; }
 
+/* ===== Logo (picto loupe) — recoloré via masque pour un rendu exact =====
+   Source = logo noir ; en mode clair il devient #FF6600. */
+.logo-mask {
+  width: 80px;
+  height: 80px;
+  -webkit-mask: url('/logo-loupe.png') center / contain no-repeat;
+  mask: url('/logo-loupe.png') center / contain no-repeat;
+  background-color: #FF6600; /* logo orange en mode clair */
+}
+
 /* ===== Mode sombre (prefers-color-scheme) ===== */
 @media (prefers-color-scheme: dark) {
   /* Re-bind semantic tokens : fond noir, blocs #444, liserés blancs, titres orange. */
