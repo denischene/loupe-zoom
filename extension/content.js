@@ -2214,6 +2214,9 @@
           enterActiveFocusMode(el);
         } else {
           enterPendingMode();
+          // No element focused yet, but the user explicitly chose Focus-loupe:
+          // remember the intent so validating (Enter/click) resumes Focus-loupe.
+          modeBeforePending = 'active_focus';
         }
       });
       return;
