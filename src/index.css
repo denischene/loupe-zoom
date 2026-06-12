@@ -180,6 +180,11 @@ All colors MUST be HSL.
     filter: invert(1) hue-rotate(180deg);
   }
 
+  /* Logo masqué : reste clair (inchangé) en mode sombre */
+  .logo-mask {
+    background-color: #E0E0E0;
+  }
+
   /* Pictos des blocs en blanc */
   .mode-picto {
     color: #ffffff;
