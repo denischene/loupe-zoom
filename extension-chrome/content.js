@@ -1333,7 +1333,18 @@
           if (ae && ae !== document.body && ae !== document.documentElement) {
             enterActiveFocusMode(ae);
           } else {
+            // New page reached after validating an element in Focus-loupe: no
+            // focus is in place yet. Simulate a first Tab by placing focus on
+            // the first focusable element, then stay in Focus-loupe PENDING so
+            // a following mouse-point + left-click restores Focus-loupe (and
+            // NOT Loupe souris). Without this, modeBeforePending would be null
+            // and a click would fall back to Loupe souris.
+            const first = findFirstFocusableElement();
+            if (first) {
+              try { first.focus({ preventScroll: true }); } catch (e) { try { first.focus(); } catch (_) {} }
+            }
             enterPendingMode();
+            modeBeforePending = 'active_focus';
           }
         } else enterPendingMode();
       });
