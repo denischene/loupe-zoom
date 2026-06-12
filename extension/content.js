@@ -197,6 +197,11 @@
   // Remember which active mode we left when entering pending, so that exiting
   // pending (Enter or left-click) restores THAT mode, not always Loupe souris.
   let modeBeforePending = null;
+  // When the user navigates with Tab while in pending, they are doing
+  // keyboard navigation = Focus-loupe intent. We remember the moment of the
+  // Tab press so the following focusin can mark `modeBeforePending` as focus,
+  // and a subsequent Enter validation resumes Focus-loupe (not Loupe souris).
+  let pendingKeyboardNavUntil = 0;
 
   // Coordinates where the user wants the next magnifier activation to be
   // centered (set by adjustZoom transitions and toggle()). Null = top-left.
