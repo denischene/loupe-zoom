@@ -2018,6 +2018,12 @@
     // Escape handled above (capture phase).
     if (e.key === 'Escape') return;
 
+    // Tab in pending = keyboard navigation → Focus-loupe intent. Record it so
+    // the focusin that follows marks the mode as Focus-loupe (see onFocusChange).
+    if (e.key === 'Tab' && state === 'pending') {
+      pendingKeyboardNavUntil = Date.now() + 1200;
+    }
+
     // Enter in pending → restore the mode that was active before pending,
     // anchored on the currently-focused element (so the user picks up where
     // they left off, possibly on a different activable element).
