@@ -1809,6 +1809,11 @@
 
     if (state === 'pending') {
       showPendingIndicator(el);
+      // Tab navigation in pending = Focus-loupe intent: validating with Enter
+      // (or click) should resume Focus-loupe anchored on this element.
+      if (Date.now() < pendingKeyboardNavUntil && isActivatableElement(el)) {
+        modeBeforePending = 'active_focus';
+      }
       return;
     }
 
