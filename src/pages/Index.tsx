@@ -185,7 +185,7 @@ const Index = () => {
                 {en ? (
                   <span>– a rectangular Focus-magnifier</span>
                 ) : (
-                  <span>– un Focus-loupe, rectangle</span>
+                  <span>– un Focus-loupe rectangle</span>
                 )}
                 <svg
                   width="20"
