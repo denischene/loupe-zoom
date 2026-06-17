@@ -338,7 +338,7 @@ const Index = () => {
             <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
                 tabIndex={highOnly}
-                className={`font-semibold flex items-center gap-2 text-base text-primary ${focusRing}`}
+                className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <svg width="24" height="18" viewBox="0 0 28 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="mode-picto">
                   <rect x="1.5" y="1.5" width="25" height="17" rx="3.5"/>
