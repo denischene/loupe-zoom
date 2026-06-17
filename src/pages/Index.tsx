@@ -171,7 +171,7 @@ const Index = () => {
                 {en ? (
                   <span>– a round Mouse magnifier</span>
                 ) : (
-                  <span>– une Loupe souris, ronde</span>
+                  <span>– une Loupe souris ronde</span>
                 )}
                 <span className="mode-picto inline-flex items-center" aria-hidden="true">🔎</span>
                 {en ? (
