@@ -518,7 +518,7 @@ const Index = () => {
               <div className="flex items-center gap-3">
                 <img src={logoEdge} alt="" width={48} height={48} loading="lazy" />
                 <img src={logoChrome} alt="" width={48} height={48} loading="lazy" />
-                <h3 className="font-semibold text-lg text-primary">Edge &amp; Chrome</h3>
+                <h3 className="font-semibold text-lg usage-title">Edge &amp; Chrome</h3>
               </div>
               <Button
                 size="lg"
