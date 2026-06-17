@@ -459,7 +459,7 @@ const Index = () => {
             <article className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-3">
                 <img src={logoFirefox} alt="" width={48} height={48} loading="lazy" />
-                <h3 className="font-semibold text-lg text-primary">Firefox</h3>
+                <h3 className="font-semibold text-lg usage-title">Firefox</h3>
               </div>
               <Button
                 size="lg"
