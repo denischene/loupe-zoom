@@ -213,7 +213,7 @@ const Index = () => {
                 {en ? (
                   <span>– a full-screen Magnifier</span>
                 ) : (
-                  <span>– un Agrandisseur, qui prend tout l'écran</span>
+                  <span>– un Agrandisseur qui prend tout l'écran</span>
                 )}
                 <svg
                   width="24"
