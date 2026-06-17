@@ -396,7 +396,7 @@ const Index = () => {
           </div>
 
           {/* Commun aux trois modes */}
-          <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3 mt-2">
+          <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3 mt-2">
             <h3
               tabIndex={highOnly}
               className={`font-semibold text-base text-primary ${focusRing}`}
