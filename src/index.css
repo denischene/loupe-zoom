@@ -142,6 +142,12 @@ All colors MUST be HSL.
 /* Pictos des blocs : noir en mode clair (par défaut) */
 .mode-picto { color: #000000; }
 
+/* Liseré orange pour les rubriques sous « Comment l'utiliser » */
+.usage-card-border { border-color: #FF6600 !important; }
+
+/* Titres des rubriques sous « Comment l'utiliser » et téléchargements */
+.usage-title { color: #EEEBE8 !important; }
+
 /* ===== Logo (picto loupe) — recoloré via masque pour un rendu exact =====
    Source = logo noir ; en mode clair il devient #FF6600. */
 .logo-mask {
