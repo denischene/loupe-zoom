@@ -175,9 +175,9 @@ const Index = () => {
                 )}
                 <span className="mode-picto inline-flex items-center" aria-hidden="true">🔎</span>
                 {en ? (
-                  <span>, which moderately enlarges whatever the mouse points at.</span>
+                  <span> which moderately enlarges whatever the mouse points at.</span>
                 ) : (
-                  <span>, qui grossit modérément ce qui est pointé à la souris.</span>
+                  <span> qui grossit modérément ce qui est pointé à la souris.</span>
                 )}
               </li>
 
