@@ -78,7 +78,7 @@ const Index = () => {
       </a>
 
       {/* Sélecteur de langue */}
-      <div className="fixed top-3 right-3 z-40">
+      <div className="flex justify-end px-6 pt-4">
         <Button
           type="button"
           variant="outline"
