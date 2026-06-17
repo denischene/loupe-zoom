@@ -240,9 +240,9 @@ const Index = () => {
                   </text>
                 </svg>
                 {en ? (
-                  <span>, which strongly enlarges the page elements (navigate with the keyboard arrow keys).</span>
+                  <span> which strongly enlarges the page elements (navigate with the keyboard arrow keys).</span>
                 ) : (
-                  <span>, et grossit très fort les éléments de la page (à naviguer via les flèches du clavier).</span>
+                  <span> et grossit très fort les éléments de la page (à naviguer via les flèches du clavier).</span>
                 )}
               </li>
             </ul>
