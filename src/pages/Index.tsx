@@ -162,8 +162,8 @@ const Index = () => {
               className={`text-2xl md:text-3xl font-bold text-center text-primary ${focusRing}`}
             >
               {en
-                ? "Switch between three types of magnifiers."
-                : "Basculez entre trois types de loupes."}
+                ? "Switch between three types of magnifiers"
+                : "Basculez entre trois types de loupes"}
             </h2>
 
             <ul className="space-y-4 text-base text-foreground">
