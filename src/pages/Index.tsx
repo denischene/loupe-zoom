@@ -78,7 +78,7 @@ const Index = () => {
       </a>
 
       {/* Sélecteur de langue */}
-      <div className="fixed top-3 right-3 z-40">
+      <div className="flex justify-end px-6 pt-4">
         <Button
           type="button"
           variant="outline"
@@ -162,8 +162,8 @@ const Index = () => {
               className={`text-2xl md:text-3xl font-bold text-center text-primary ${focusRing}`}
             >
               {en
-                ? "Switch between three types of magnifiers."
-                : "Basculez entre trois types de loupes."}
+                ? "Switch between three types of magnifiers"
+                : "Basculez entre trois types de loupes"}
             </h2>
 
             <ul className="space-y-4 text-base text-foreground">
@@ -171,13 +171,13 @@ const Index = () => {
                 {en ? (
                   <span>– a round Mouse magnifier</span>
                 ) : (
-                  <span>– une Loupe souris, ronde</span>
+                  <span>– une Loupe souris ronde</span>
                 )}
                 <span className="mode-picto inline-flex items-center" aria-hidden="true">🔎</span>
                 {en ? (
-                  <span>, which moderately enlarges whatever the mouse points at.</span>
+                  <span> which moderately enlarges whatever the mouse points at.</span>
                 ) : (
-                  <span>, qui grossit modérément ce qui est pointé à la souris.</span>
+                  <span> qui grossit modérément ce qui est pointé à la souris.</span>
                 )}
               </li>
 
@@ -185,7 +185,7 @@ const Index = () => {
                 {en ? (
                   <span>– a rectangular Focus-magnifier</span>
                 ) : (
-                  <span>– un Focus-loupe, rectangle</span>
+                  <span>– un Focus-loupe rectangle</span>
                 )}
                 <svg
                   width="20"
@@ -203,9 +203,9 @@ const Index = () => {
                   <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M7 17h10" />
                 </svg>
                 {en ? (
-                  <span>, which clearly enlarges items tabbed through with the keyboard (using the Tab key).</span>
+                  <span> which clearly enlarges items tabbed through with the keyboard (using the Tab key).</span>
                 ) : (
-                  <span>, qui grossit bien les éléments tabulés au clavier (via la touche Tabulation).</span>
+                  <span> qui grossit bien les éléments tabulés au clavier (via la touche Tabulation).</span>
                 )}
               </li>
 
@@ -213,7 +213,7 @@ const Index = () => {
                 {en ? (
                   <span>– a full-screen Magnifier</span>
                 ) : (
-                  <span>– un Agrandisseur, qui prend tout l'écran</span>
+                  <span>– un Agrandisseur qui prend tout l'écran</span>
                 )}
                 <svg
                   width="24"
@@ -240,9 +240,9 @@ const Index = () => {
                   </text>
                 </svg>
                 {en ? (
-                  <span>, which strongly enlarges the page elements (navigate with the keyboard arrow keys).</span>
+                  <span> which strongly enlarges the page elements (navigate with the keyboard arrow keys).</span>
                 ) : (
-                  <span>, et grossit très fort les éléments de la page (à naviguer via les flèches du clavier).</span>
+                  <span> et grossit très fort les éléments de la page (à naviguer via les flèches du clavier).</span>
                 )}
               </li>
             </ul>
@@ -261,10 +261,10 @@ const Index = () => {
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Mode Souris */}
-            <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
+            <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
                 tabIndex={highOnly}
-                className={`font-semibold flex items-center gap-2 text-base text-primary ${focusRing}`}
+                className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <span className="mode-picto" aria-hidden="true">🔎</span>{" "}
                 {en ? "Mouse mode" : "Mode Souris"}
@@ -287,10 +287,10 @@ const Index = () => {
             </div>
 
             {/* Mode Focus-loupe */}
-            <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
+            <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
                 tabIndex={highOnly}
-                className={`font-semibold flex items-center gap-2 text-base text-primary ${focusRing}`}
+                className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mode-picto">
                   <rect x="2" y="5" width="20" height="14" rx="2.5"/>
@@ -335,10 +335,10 @@ const Index = () => {
             </div>
 
             {/* Mode Agrandisseur */}
-            <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
+            <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
                 tabIndex={highOnly}
-                className={`font-semibold flex items-center gap-2 text-base text-primary ${focusRing}`}
+                className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <svg width="24" height="18" viewBox="0 0 28 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="mode-picto">
                   <rect x="1.5" y="1.5" width="25" height="17" rx="3.5"/>
@@ -396,10 +396,10 @@ const Index = () => {
           </div>
 
           {/* Commun aux trois modes */}
-          <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3 mt-2">
+          <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3 mt-2">
             <h3
               tabIndex={highOnly}
-              className={`font-semibold text-base text-primary ${focusRing}`}
+              className={`font-semibold text-base usage-title ${focusRing}`}
             >
               {en ? "Common to all three modes" : "Commun aux trois modes"}
             </h3>
@@ -459,7 +459,7 @@ const Index = () => {
             <article className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-3">
                 <img src={logoFirefox} alt="" width={48} height={48} loading="lazy" />
-                <h3 className="font-semibold text-lg text-primary">Firefox</h3>
+                <h3 className="font-semibold text-lg usage-title">Firefox</h3>
               </div>
               <Button
                 size="lg"
@@ -518,7 +518,7 @@ const Index = () => {
               <div className="flex items-center gap-3">
                 <img src={logoEdge} alt="" width={48} height={48} loading="lazy" />
                 <img src={logoChrome} alt="" width={48} height={48} loading="lazy" />
-                <h3 className="font-semibold text-lg text-primary">Edge &amp; Chrome</h3>
+                <h3 className="font-semibold text-lg usage-title">Edge &amp; Chrome</h3>
               </div>
               <Button
                 size="lg"
