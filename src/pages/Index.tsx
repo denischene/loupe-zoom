@@ -203,9 +203,9 @@ const Index = () => {
                   <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M7 17h10" />
                 </svg>
                 {en ? (
-                  <span>, which clearly enlarges items tabbed through with the keyboard (using the Tab key).</span>
+                  <span> which clearly enlarges items tabbed through with the keyboard (using the Tab key).</span>
                 ) : (
-                  <span>, qui grossit bien les éléments tabulés au clavier (via la touche Tabulation).</span>
+                  <span> qui grossit bien les éléments tabulés au clavier (via la touche Tabulation).</span>
                 )}
               </li>
 
