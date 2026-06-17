@@ -335,7 +335,7 @@ const Index = () => {
             </div>
 
             {/* Mode Agrandisseur */}
-            <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
+            <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
                 tabIndex={highOnly}
                 className={`font-semibold flex items-center gap-2 text-base text-primary ${focusRing}`}
