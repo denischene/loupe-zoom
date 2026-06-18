@@ -152,7 +152,7 @@ const About = () => {
               : "Loupe-Zoom est issu des travaux de recherche du Programme Accessibilité Salariés d'Orange Labs (Mission Insertion Handicap)."}
           </p>
           <img
-            src={logoOrange.url}
+            src="/logo-orange-small.png"
             alt="Orange"
             width={96}
             height={96}
@@ -169,7 +169,7 @@ const About = () => {
             {en ? "Extension under the GPLv3 license." : "Extension sous licence GPLv3."}
           </p>
           <img
-            src={logoGplv3.url}
+            src="/gplv3-or-later.svg"
             alt={en ? "GPLv3 or later" : "GPLv3 ou ultérieure"}
             width={189}
             height={80}
