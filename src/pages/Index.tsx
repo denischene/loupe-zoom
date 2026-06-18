@@ -153,7 +153,15 @@ const Index = () => {
                 : "Basculez entre trois types de loupes"}
             </h2>
 
-            <ul className="space-y-4 text-base text-foreground">
+            <ul
+              tabIndex={0}
+              aria-label={
+                en
+                  ? "Description of the three types of magnifiers"
+                  : "Description des trois types de loupes"
+              }
+              className={`space-y-4 text-base text-foreground ${focusRing}`}
+            >
               <li className="flex flex-wrap items-center gap-1.5">
                 {en ? (
                   <span>– a round Mouse magnifier</span>
