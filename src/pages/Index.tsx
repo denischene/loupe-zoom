@@ -38,19 +38,6 @@ const Index = () => {
       : "Loupe-Zoom — Extension loupe pour navigateur";
   }, [lang, en]);
 
-  // ----- Détection du zoom navigateur (>= 175 %) pour l'ordre de tabulation -----
-  const [highZoom, setHighZoom] = useState(false);
-  useEffect(() => {
-    const update = () => setHighZoom(window.devicePixelRatio >= 1.75);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  // tabIndex helpers selon le niveau de zoom
-  const lowOnly = highZoom ? -1 : 0; // visibles à la tabulation en zoom < 175 %
-  const highOnly = highZoom ? 0 : -1; // visibles à la tabulation en zoom >= 175 %
-
   const downloadFile = (url: string, filename: string) => {
     fetch(url)
       .then((res) => {
