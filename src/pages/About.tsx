@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoOrange from "@/assets/logo-orange-small.png.asset.json";
-import logoGplv3 from "@/assets/gplv3-or-later.svg.asset.json";
+
+
 
 type Lang = "fr" | "en";
 
