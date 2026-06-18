@@ -563,6 +563,19 @@ const Index = () => {
           </div>
         </section>
       </main>
+
+      <footer className="border-t border-border">
+        <div className="max-w-3xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-foreground text-center">
+          <span>
+            {en
+              ? "© 2026 Orange — All rights reserved."
+              : "© 2026 Orange — Tous droits réservés."}
+          </span>
+          <Link to="/a-propos" className={`font-semibold text-primary underline ${focusRing}`}>
+            {en ? "About" : "À propos"}
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 };
