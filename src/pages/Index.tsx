@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Download, Eye, MousePointerClick, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,19 +38,6 @@ const Index = () => {
       ? "Magnifying glass-Zoom — Browser magnifier extension"
       : "Loupe-Zoom — Extension loupe pour navigateur";
   }, [lang, en]);
-
-  // ----- Détection du zoom navigateur (>= 175 %) pour l'ordre de tabulation -----
-  const [highZoom, setHighZoom] = useState(false);
-  useEffect(() => {
-    const update = () => setHighZoom(window.devicePixelRatio >= 1.75);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  // tabIndex helpers selon le niveau de zoom
-  const lowOnly = highZoom ? -1 : 0; // visibles à la tabulation en zoom < 175 %
-  const highOnly = highZoom ? 0 : -1; // visibles à la tabulation en zoom >= 175 %
 
   const downloadFile = (url: string, filename: string) => {
     fetch(url)
@@ -166,7 +154,15 @@ const Index = () => {
                 : "Basculez entre trois types de loupes"}
             </h2>
 
-            <ul className="space-y-4 text-base text-foreground">
+            <ul
+              tabIndex={0}
+              aria-label={
+                en
+                  ? "Description of the three types of magnifiers"
+                  : "Description des trois types de loupes"
+              }
+              className={`space-y-4 text-base text-foreground ${focusRing}`}
+            >
               <li className="flex flex-wrap items-center gap-1.5">
                 {en ? (
                   <span>– a round Mouse magnifier</span>
@@ -253,7 +249,7 @@ const Index = () => {
         <section className="space-y-6" aria-labelledby="usage-title">
           <h2
             id="usage-title"
-            tabIndex={lowOnly}
+            tabIndex={0}
             className={`text-2xl md:text-3xl font-bold text-center text-primary ${focusRing}`}
           >
             {en ? "How to use it" : "Comment l'utiliser"}
@@ -263,7 +259,7 @@ const Index = () => {
             {/* Mode Souris */}
             <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
-                tabIndex={highOnly}
+                tabIndex={0}
                 className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <span className="mode-picto" aria-hidden="true">🔎</span>{" "}
@@ -289,7 +285,7 @@ const Index = () => {
             {/* Mode Focus-loupe */}
             <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
-                tabIndex={highOnly}
+                tabIndex={0}
                 className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mode-picto">
@@ -337,7 +333,7 @@ const Index = () => {
             {/* Mode Agrandisseur */}
             <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
-                tabIndex={highOnly}
+                tabIndex={0}
                 className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <svg width="24" height="18" viewBox="0 0 28 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="mode-picto">
@@ -398,7 +394,7 @@ const Index = () => {
           {/* Commun aux trois modes */}
           <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3 mt-2">
             <h3
-              tabIndex={highOnly}
+              tabIndex={0}
               className={`font-semibold text-base usage-title ${focusRing}`}
             >
               {en ? "Common to all three modes" : "Commun aux trois modes"}
@@ -448,7 +444,7 @@ const Index = () => {
         <section className="space-y-8" aria-labelledby="download-title">
           <h2
             id="download-title"
-            tabIndex={lowOnly}
+            tabIndex={0}
             className={`text-2xl md:text-3xl font-bold text-center text-primary ${focusRing}`}
           >
             {en ? "Download" : "Télécharger"}
@@ -475,7 +471,7 @@ const Index = () => {
                 </span>
               </Button>
               <div className="text-sm space-y-2 text-left bg-background rounded-lg border p-4 text-foreground">
-                <p tabIndex={highOnly} className={`font-semibold text-foreground ${focusRing}`}>
+                <p tabIndex={0} className={`font-semibold text-foreground ${focusRing}`}>
                   {en ? "Installation:" : "Installation :"}
                 </p>
                 {en ? (
@@ -534,7 +530,7 @@ const Index = () => {
                 </span>
               </Button>
               <div className="text-sm space-y-2 text-left bg-background rounded-lg border p-4 text-foreground">
-                <p tabIndex={highOnly} className={`font-semibold text-foreground ${focusRing}`}>
+                <p tabIndex={0} className={`font-semibold text-foreground ${focusRing}`}>
                   {en ? "Installation:" : "Installation :"}
                 </p>
                 {en ? (
@@ -568,6 +564,19 @@ const Index = () => {
           </div>
         </section>
       </main>
+
+      <footer className="border-t border-border">
+        <div className="max-w-3xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-foreground text-center">
+          <span>
+            {en
+              ? "© 2026 Orange — All rights reserved."
+              : "© 2026 Orange — Tous droits réservés."}
+          </span>
+          <Link to="/a-propos" className={`font-semibold text-primary underline ${focusRing}`}>
+            {en ? "About" : "À propos"}
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 };
