@@ -169,10 +169,10 @@ const About = () => {
             {en ? "Extension under the MIT license." : "Extension sous licence MIT."}
           </p>
           <img
-            src="/gplv3-or-later.svg"
-            alt={en ? "GPLv3 or later" : "GPLv3 ou ultérieure"}
-            width={189}
-            height={80}
+            src="/mit-license-logo.png"
+            alt={en ? "MIT license" : "Licence MIT"}
+            width={1024}
+            height={512}
             className="h-20 w-auto"
             loading="lazy"
           />
