@@ -240,7 +240,7 @@ const Index = () => {
         <section className="space-y-6" aria-labelledby="usage-title">
           <h2
             id="usage-title"
-            tabIndex={lowOnly}
+            tabIndex={0}
             className={`text-2xl md:text-3xl font-bold text-center text-primary ${focusRing}`}
           >
             {en ? "How to use it" : "Comment l'utiliser"}
@@ -250,7 +250,7 @@ const Index = () => {
             {/* Mode Souris */}
             <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
-                tabIndex={highOnly}
+                tabIndex={0}
                 className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <span className="mode-picto" aria-hidden="true">🔎</span>{" "}
@@ -276,7 +276,7 @@ const Index = () => {
             {/* Mode Focus-loupe */}
             <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
-                tabIndex={highOnly}
+                tabIndex={0}
                 className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mode-picto">
@@ -324,7 +324,7 @@ const Index = () => {
             {/* Mode Agrandisseur */}
             <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3">
               <h3
-                tabIndex={highOnly}
+                tabIndex={0}
                 className={`font-semibold flex items-center gap-2 text-base usage-title ${focusRing}`}
               >
                 <svg width="24" height="18" viewBox="0 0 28 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="mode-picto">
@@ -385,7 +385,7 @@ const Index = () => {
           {/* Commun aux trois modes */}
           <div className="rounded-xl border usage-card-border bg-card p-5 shadow-sm space-y-3 mt-2">
             <h3
-              tabIndex={highOnly}
+              tabIndex={0}
               className={`font-semibold text-base usage-title ${focusRing}`}
             >
               {en ? "Common to all three modes" : "Commun aux trois modes"}
@@ -435,7 +435,7 @@ const Index = () => {
         <section className="space-y-8" aria-labelledby="download-title">
           <h2
             id="download-title"
-            tabIndex={lowOnly}
+            tabIndex={0}
             className={`text-2xl md:text-3xl font-bold text-center text-primary ${focusRing}`}
           >
             {en ? "Download" : "Télécharger"}
@@ -462,7 +462,7 @@ const Index = () => {
                 </span>
               </Button>
               <div className="text-sm space-y-2 text-left bg-background rounded-lg border p-4 text-foreground">
-                <p tabIndex={highOnly} className={`font-semibold text-foreground ${focusRing}`}>
+                <p tabIndex={0} className={`font-semibold text-foreground ${focusRing}`}>
                   {en ? "Installation:" : "Installation :"}
                 </p>
                 {en ? (
@@ -521,7 +521,7 @@ const Index = () => {
                 </span>
               </Button>
               <div className="text-sm space-y-2 text-left bg-background rounded-lg border p-4 text-foreground">
-                <p tabIndex={highOnly} className={`font-semibold text-foreground ${focusRing}`}>
+                <p tabIndex={0} className={`font-semibold text-foreground ${focusRing}`}>
                   {en ? "Installation:" : "Installation :"}
                 </p>
                 {en ? (
