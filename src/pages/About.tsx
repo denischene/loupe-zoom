@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,10 +31,32 @@ const About = () => {
     }
   };
 
+  // Firefox restaure la position de défilement après le montage : on force le haut
+  // de page de façon répétée sur quelques frames.
+  useLayoutEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    const toTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    toTop();
+    const raf1 = requestAnimationFrame(() => {
+      toTop();
+      requestAnimationFrame(toTop);
+    });
+    const t = window.setTimeout(toTop, 120);
+    return () => {
+      cancelAnimationFrame(raf1);
+      window.clearTimeout(t);
+    };
+  }, []);
+
   useEffect(() => {
     document.documentElement.lang = lang;
     document.title = en ? "About — Magnifying glass-Zoom" : "À propos — Loupe-Zoom";
-    window.scrollTo(0, 0);
   }, [lang, en]);
 
   return (
