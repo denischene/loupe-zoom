@@ -146,7 +146,7 @@ All colors MUST be HSL.
 .usage-card-border { border-color: #FF6600 !important; }
 
 /* Titres des rubriques sous « Comment l'utiliser » et téléchargements */
-.usage-title { color: #EEEBE8 !important; }
+.usage-title { color: #000000 !important; }
 
 /* ===== Logo (picto loupe) — recoloré via masque pour un rendu exact =====
    Source = logo noir ; en mode clair il devient #FF6600. */
@@ -194,6 +194,11 @@ All colors MUST be HSL.
   /* Pictos des blocs en blanc */
   .mode-picto {
     color: #ffffff;
+  }
+
+  /* Titres des rubriques en clair (#EEEBE8) en mode sombre */
+  .usage-title {
+    color: #EEEBE8 !important;
   }
 }
 

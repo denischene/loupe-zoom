@@ -34,6 +34,7 @@ const About = () => {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.title = en ? "About — Magnifying glass-Zoom" : "À propos — Loupe-Zoom";
+    window.scrollTo(0, 0);
   }, [lang, en]);
 
   return (

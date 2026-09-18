@@ -81,7 +81,7 @@ const Index = () => {
       </div>
 
       {/* Hero */}
-      <header className="pt-16 pb-10 px-6 text-center space-y-6 max-w-3xl mx-auto">
+      <header className="pt-8 pb-10 px-6 text-center space-y-6 max-w-3xl mx-auto">
         <div
           role="img"
           aria-label={en ? "Magnifying glass-Zoom logo" : "Logo Loupe-Zoom"}
